@@ -1,0 +1,17 @@
+# Development documents (keep README.md only)
+PLAN.md
+PROGRESS.md
+prompts/CLAUDE.md.original
+prompts/claudeignore.original
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Generated test vaults
+test-vault/
+
+# OS
+.DS_Store
+Thumbs.db

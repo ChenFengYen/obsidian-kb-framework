@@ -1,0 +1,23 @@
+# 首頁 (Home)
+
+歡迎來到你的知識庫。這是你的知識導航入口。
+
+## 知識領域
+
+{% for name, info in domains.items() %}
+[[{{ name }}_MOC]] — {{ info.description }}
+{% endfor %}
+
+## 快速導覽
+
+| 領域 | MOC | 概念筆記 |
+|:--|:--|:--|
+{% for name, info in domains.items() %}
+| OV-{{ name }} | [[{{ name }}_MOC]] | `OV-{{ name }}/Note/` |
+{% endfor %}
+
+## 工具
+
+- `/review-vault` — 檢查知識庫健康狀態
+- `/suggest-next` — AI 推薦下一步學習方向
+- `/onboard` — 新筆記入庫（連結注入 + 概念發現）
