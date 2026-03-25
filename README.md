@@ -18,7 +18,7 @@ AI 引導式知識庫建設框架 — 將 AI 對話中的知識系統化納入 O
 
 ## AI 代理相容性
 
-本框架以 **Claude Code v1.0.33**（Claude Opus 4.6, 1M context）開發和測試。但不依賴 Claude 專有功能，任何支援終端讀寫檔案和執行腳本的 AI 代理都適用：
+本框架以 **Claude Code v2.1.83**（Claude Opus 4.6, 1M context）開發和測試。但不依賴 Claude 專有功能，任何支援終端讀寫檔案和執行腳本的 AI 代理都適用：
 
 | 工具 | 相容性 |
 |:--|:--|
