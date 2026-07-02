@@ -1,132 +1,36 @@
-# vault_config.yaml — Neuroscience Research Example
-# This demonstrates using the framework for a different domain.
-
 vault_name: "Neuroscience KB"
 language: "en"
-
 domains:
-  Neurobiology:
-    description: "Cellular and molecular neuroscience"
-    keywords:
-      - "neurobiology"
-      - "neuroscience"
-      - "synaptic plasticity"
-      - "neuronal circuits"
-      - "electrophysiology"
-      - "neurotransmitter"
-    is_default: true
-  CognitiveScience:
-    description: "Cognition, memory, attention"
-    keywords:
-      - "cognitive science"
-      - "memory"
-      - "attention"
-      - "perception"
-      - "decision making"
-      - "executive function"
-  Neuroimaging:
-    description: "Brain imaging methods and analysis"
-    keywords:
-      - "fMRI"
-      - "EEG"
-      - "MEG"
-      - "PET"
-      - "neuroimaging"
-      - "brain mapping"
-  Computational:
-    description: "Computational neuroscience and modeling"
-    keywords:
-      - "computational neuroscience"
-      - "neural networks"
-      - "brain simulation"
-      - "connectomics"
-  Clinical:
-    description: "Neurological disorders and treatments"
-    keywords:
-      - "neurological disorders"
-      - "neurodegeneration"
-      - "Alzheimer"
-      - "Parkinson"
-      - "epilepsy"
-
-default_domain: "Neurobiology"
-
-section_markers:
-  - "# Background"
-  - "# Methods"
-  - "# Results"
-  - "# Discussion"
-  - "# Significance"
+  Neuroscience:
+    description: "Neural systems, circuits, and behavior"
+    keywords: [neuroscience, neural circuits, behavior]
+  Imaging:
+    description: "Microscopy and neuroimaging methods"
+    keywords: [microscopy, fMRI, calcium imaging]
+  DataScience:
+    description: "Statistics and computational analysis"
+    keywords: [statistics, machine learning, signal processing]
+default_domain: "Neuroscience"
+section_markers: ["# Background", "# Methods", "# Results", "# Discussion", "# Significance"]
 figures_section: "## Figures"
-
-filtering:
-  generic_blocklist:
-    - "data analysis"
-    - "statistical analysis"
-    - "experimental design"
-    - "data collection"
-    - "methodology"
-    - "results interpretation"
-  boost_patterns:
-    - "synap"
-    - "neuron"
-    - "cortex"
-    - "hippocamp"
-    - "dopamin"
-    - "serotonin"
-    - "GABA"
-    - "glutamate"
-    - "amygdala"
-    - "prefrontal"
-    - "plasticity"
-    - "potentiation"
-  alias_blocklist:
-    - "model"
-    - "system"
-    - "function"
-    - "process"
-    - "analysis"
-    - "data"
-    - "method"
-    - "result"
-    - "response"
-    - "activity"
-  stem_blocklist: ["id", "os", "io"]
-  min_alias_length: 12
-
-link_injection:
-  scan_dirs:
-    - "OV-Papers/PDF-md"
-
-enrichment:
-  style_reference: null
-  target_level: "basic"
-  batch_size: 10
-
+figure_extraction:
+  min_width: 500
+  portrait_aspect_range: [0.7, 1.4]
+  graphical_abstract_min_width: 800
 capture:
   mode: "inline+debrief"
-
 modules:
   zotero: false
   paper_pipeline: false
-
 learning:
-  goals:
-    - "Understand synaptic mechanisms of learning and memory"
-    - "Master fMRI data analysis pipelines"
-  current_focus: "Synaptic plasticity"
+  goals: ["Understand neural circuit mechanisms"]
+  current_focus: ""
   experience_level: "intermediate"
-
 user_profile:
-  research_areas:
-    - "Cognitive Neuroscience"
-    - "Neuroimaging"
-  knowledge_gaps:
-    - "Molecular neurobiology"
-    - "Computational modeling"
-
+  research_areas: ["Neuroscience"]
+  knowledge_gaps: []
 preferences:
   note_language: "en"
   moc_style: "narrative"
   link_format: "citekey"
-  auto_rescan: true
+  link_policy: "manual-semantic"

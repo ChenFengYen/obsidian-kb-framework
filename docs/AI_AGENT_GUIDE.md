@@ -1,86 +1,46 @@
 # AI 代理行為說明
 
-本文件說明框架中 AI 代理的設計邏輯，供開發者和進階使用者參考。
+## 規則入口
 
-## 架構
+- `AGENTS.md`：跨 Agent 核心規則與唯一通用行為來源。
+- `CLAUDE.md`：Claude Code adapter，只匯入 `AGENTS.md` 並補充 Claude-specific 行為。
+- `GEMINI.md`：Gemini CLI adapter，只匯入 `AGENTS.md` 並補充 context 驗證。
+- 本地 Agent：launcher 或 system prompt 必須明確注入 `AGENTS.md`；若無法確認載入，只能進行唯讀探索。
+## 職責
 
-```
-使用者 ←→ AI 代理（終端 CLI）←→ 腳本工具 + Obsidian Vault
-         ↑ 核心介面                  ↑ 支撐層
-```
+AI 代理有三項核心職責：
 
-AI 代理的行為由 `CLAUDE.md`（系統提示）和 `.claude/skills/`（指令定義）控制。
+1. 搜尋並綜合 vault 中已存在的知識。
+2. 辨識內容缺口、錯誤與結構問題。
+3. 在使用者確認後，將有效洞見寫回適當筆記。
 
-## 三大職責
+## Proposal-first
 
-### 1. 知識引導
+涉及建立、重寫、搬移或大量修改筆記時，先提供候選清單、理由與影響範圍。只有在使用者確認後執行。
 
-- **問題驅動模式**：使用者提問 → 搜尋 vault → 綜合回答 → 標缺口 → 建議更新
-- **即時捕獲**：對話中識別可沉澱的洞見，提示使用者確認
-- **Session 回收**：對話結束時回顧所有討論，列出可寫入筆記的洞見
+## 禁止行為
 
-### 2. 歸檔管理
+- 依關鍵字自動注入 wikilink。
+- 自動建立空 stub 來消除紅連結。
+- 以固定行數或模板欄位為目的批量擴寫筆記。
+- 未讀上下文就批量替換連結。
+- 將暫存報告與中間產物寫進 vault。
 
-- `/onboard`：新筆記入庫（概念連結注入 + 候選發現）
-- `/enrich`：批量充實薄弱筆記
-- `/process-inbox`：處理 QuickAdd 建立的概念佇列
-- 自動呼叫腳本工具（concept_index、inject_links 等）
+## 搜尋順序
 
-### 3. 架構諮詢
+1. 讀取相關 Domain MOC。
+2. 搜尋概念、同義詞與 citekey。
+3. 閱讀最相關筆記的上下文。
+4. 必要時才查外部來源，並區分 vault 內容與新取得資訊。
 
-- `/review-vault`：結合 vault_health.py 數據 + note_graph.py 分析，給出架構建議
-- `/suggest-next`：基於學習目標和知識缺口，推薦下一步
-- MOC 設計指導：按 LYT 原則建議 MOC 結構
+## 寫入原則
 
-## 行為適配
+- 優先更新既有筆記。
+- 新筆記必須有明確主題、研究用途或獨立問題。
+- 重要主張保留來源與不確定性。
+- 寫入後檢查 wikilink、檔名與目標位置。
+- 大規模修改先 dry-run 並保留可審查 diff。
 
-AI 根據 `vault_config.yaml` 的 `learning.experience_level` 調整行為：
+## Skills
 
-| 等級 | AI 行為 |
-|:--|:--|
-| beginner | 多解釋概念、主動建議結構、詳細引導每個步驟 |
-| intermediate | 聚焦知識缺口、協助深化、適度解釋 |
-| advanced | 以討論為主、使用者主導、簡潔回應 |
-
-## 知識回收模式
-
-由 `capture.mode` 配置控制：
-
-| 模式 | 行為 |
-|:--|:--|
-| `debrief` | 僅 session 結束時回顧 |
-| `inline+debrief` | 對話中即時標示 + 結束回顧 |
-| `journal+debrief` | 建立探索日誌 + 結束回顧 |
-
-## 自訂 AI 行為
-
-修改 `CLAUDE.md` 可以調整 AI 的核心行為。關鍵段落：
-
-- **情境路由**：控制 AI 對不同使用者意圖的反應
-- **Session Protocol**：控制對話開始/結束時的自動行為
-- **問題驅動模式**：控制知識探索的流程
-- **充實度分級**：控制筆記品質判斷標準
-
-## 新增 Skill
-
-在 `.claude/skills/` 下建立新目錄和 `SKILL.md`：
-
-```yaml
----
-name: my-skill
-description: 描述
-disable-model-invocation: true
-argument-hint: [可選參數說明]
----
-
-# Skill 標題
-
-## 任務
-（AI 應該做什麼）
-
-## 步驟
-（具體步驟）
-
-## 注意事項
-（限制和偏好）
-```
+Skills 位於 `.claude/skills/`。每個 skill 應清楚定義觸發條件、輸入、核准點、輸出與驗證方式。v2 內建 `/init-domain`、`/review-vault`、`/suggest-next`、`/debrief`。

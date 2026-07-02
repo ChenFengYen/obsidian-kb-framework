@@ -1,131 +1,99 @@
 # obsidian-kb-framework
 
-AI 引導式知識庫建設框架 — 將 AI 對話中的知識系統化納入 Obsidian 知識庫。
+AI 引導式 Obsidian 知識庫框架。v2 採用問題驅動協作：AI 先搜尋既有知識，再回答問題、辨識缺口，並在使用者確認後更新筆記。
 
-## 這是什麼？
+## v2 核心原則
 
-一套以 **AI 代理為核心** 的知識庫建設系統。透過 AI 引導，幫助使用者將學習過程中的資訊（論文、書籍、課程、對話）轉化為結構化、相互連結的知識網路。
+- `Home → Domain MOC → Notes` 作為導航骨架。
+- 連結是閱讀上下文後的語意判斷，不做關鍵字批量注入。
+- 不自動建立 stub，不以筆記行數作為充實目標。
+- 優先更新既有筆記；新筆記必須能回答獨立問題。
+- 重要概念採多源驗證，單一來源發現需明確標示。
+- 對話洞見先提出候選，再由使用者確認寫入。
 
-基於 [LYT（Linking Your Thinking）](https://www.linkingyourthinking.com/) 方法論，但你不需要先了解 LYT — AI 代理會在互動中引導你。
+## 適合誰
 
-## 適合誰？
-
-- 想學習陌生領域但不知道如何組織知識的人
-- 研究者需要系統化管理文獻和概念筆記
-- 任何想將「與 AI 對話的收穫」沉澱為長期知識的人
-
-**不限特定領域** — 植物科學、神經科學、軟體工程、法律、語言學皆適用。
+- 需要管理論文、概念、實驗與研究決策的研究者。
+- 正在學習陌生領域，希望讓 AI 協助建立長期知識網路的人。
+- 需要可稽核、可逐步演進，而非大量自動生成內容的知識庫。
 
 ## AI 代理相容性
 
-本框架以 **Claude Code v2.1.83**（Claude Opus 4.6, 1M context）開發和測試。但不依賴 Claude 專有功能，任何支援終端讀寫檔案和執行腳本的 AI 代理都適用：
-
-| 工具 | 相容性 |
-|:--|:--|
-| Claude Code (Anthropic) | ✅ 開發環境 |
-| Gemini CLI (Google) | ✅ 適用 |
-| Codex CLI (OpenAI) | ✅ 適用 |
-| Grok CLI (xAI) | ✅ 適用 |
-
-差異在於：模型效能影響筆記生成品質，上下文窗口影響單次處理的筆記數量。
+`AGENTS.md` 是生成 vault 的跨 Agent 核心規則；`CLAUDE.md` 與 `GEMINI.md` 是薄平台 adapter。Codex 可直接載入 `AGENTS.md`，Claude Code／Gemini CLI 透過 adapter 匯入同一份規則，避免維護平行副本。目前 skills 仍安裝於 `.claude/skills/`；跨平台 skill adapter 留待後續版本。
 
 ## 快速開始
-
-### 1. 安裝
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/obsidian-kb-framework.git
 cd obsidian-kb-framework
 pip install -r requirements.txt
-```
-
-### 2. 建立知識庫
-
-```bash
 python setup.py
 ```
 
-互動式設定會引導你：
-- 定義領域分類
-- 設定學習目標
-- 選擇可選模組（Zotero、論文管線）
+用 Obsidian 開啟產生的 vault，接著在 vault 根目錄啟動 AI 代理。第一次使用可執行 `/init-domain`，也可以直接提出研究問題。
 
-### 3. 開始使用
+## 工作流程
 
-```bash
-cd my-knowledge-base
-claude  # 或你的 AI 代理工具
+```text
+使用者提出問題
+  → AI 搜尋 vault 與現有來源
+  → 綜合回答並標示知識缺口
+  → 提出更新／新建筆記候選
+  → 使用者確認
+  → 寫入並驗證連結
+  → /debrief 記錄下次繼續點
 ```
 
-AI 代理會自動讀取配置，引導你開始建設知識庫。
+## Skills
 
-## 核心功能
-
-### AI 代理能力（8 個 Skills）
-
-| 指令 | 功能 |
+| Skill | 用途 |
 |:--|:--|
-| `/init-domain` | AI 引導式建庫（對話了解領域 → 建議結構 → 生成配置） |
-| `/review-vault` | 架構診斷 + 優先行動建議 |
-| `/suggest-next` | 基於知識缺口的學習路徑推薦 |
-| `/debrief` | Session 知識回收（回顧對話 → 沉澱洞見到筆記） |
-| `/enrich` | 批量充實薄弱筆記 |
-| `/onboard` | 新筆記入庫（連結注入 + 概念發現） |
-| `/pipeline-status` | 檢查建設進度 |
-| `/process-inbox` | 處理 QuickAdd 概念佇列 |
+| `/init-domain` | 建立領域、MOC 與第一批研究問題 |
+| `/review-vault` | 診斷孤兒、壞連結、MOC 覆蓋與治理問題 |
+| `/suggest-next` | 依目前問題與知識缺口排序下一步 |
+| `/debrief` | 回收對話中已確認的洞見 |
 
-### 問題驅動模式
+## 工具
 
-直接向 AI 提問 → AI 搜尋知識庫回答 → 發現缺口時提議建立新筆記 → 知識自然成長。
-
-### 知識回收
-
-對話中的洞見不會遺失在聊天記錄中：
-- **即時捕獲**：AI 在對話中標示可沉澱的洞見
-- **Session 回收**：結束時自動回顧對話，提議更新筆記
-
-### 自動化工具鏈
-
-| 工具 | 功能 |
+| 工具 | 用途 |
 |:--|:--|
-| `concept_index.py` | 建立概念索引（自動快取） |
-| `inject_links.py` | 自動注入 `[[概念]]` 連結 |
-| `extract_candidates.py` | 從筆記中發現新概念候選 |
-| `vault_health.py` | 知識庫健康診斷 |
-| `note_graph.py` | 連結圖分析（群集、橋接、孤兒） |
-| `prepare_enrich_tasks.py` | 生成批量充實任務 |
+| `vault_health.py` | 唯讀健康診斷，報告預設寫入系統暫存目錄 |
+| `note_graph.py` | 分析孤兒、hub、bridge 與跨領域連結 |
+| `audit_images.py` | 圖片引用與孤立附件稽核 |
+| `rename_images.py` | 依人工計畫批次重命名圖片與引用 |
 
-### 可選模組
+論文圖表與 Zotero 工具屬可選模組，不會自動建立概念連結。
 
-- **Zotero 整合**：文獻搜尋、匯入、自動 Tag
-- **論文管線**：PDF 圖表提取、論文連結注入
+## 產生的 Vault 結構
 
-## 目錄結構
-
-```
+```text
 your-vault/
-├── Home.md                    # 知識入口
-├── vault_config.yaml          # 單一配置檔
-├── CLAUDE.md                  # AI 代理行為定義
-├── .claude/skills/            # 8 個 AI 指令
-├── OV-Domain1/
-│   ├── Map/                   # 內容地圖 (MOC)
-│   ├── Note/                  # 概念筆記
-│   └── Pic/                   # 圖片
-├── OV-Domain2/...
+├── Home.md
+├── vault_config.yaml
+├── AGENTS.md                 # 跨 Agent 核心規則
+├── CLAUDE.md                 # Claude adapter
+├── GEMINI.md                 # Gemini adapter
+├── .claude/skills/
+├── OV-Domain/
+│   ├── Map/
+│   ├── Note/
+│   └── Pic/
 └── OV-Papers/
-    ├── PDF-md/                # 論文/來源筆記
-    ├── scripts/               # 自動化工具
-    └── enrich-inbox.md        # 概念佇列
+    ├── PDF-raw/
+    ├── PDF-md/
+    ├── Final-md/
+    ├── PDF-assets/
+    └── scripts/
 ```
 
 ## 文件
 
-- [METHODOLOGY.md](docs/METHODOLOGY.md) — LYT 方法論與兩路徑策略
-- [docs/SETUP.md](docs/SETUP.md) — 詳細安裝指南
-- [docs/USER_GUIDE.md](docs/USER_GUIDE.md) — 日常使用指南
-- [docs/AI_AGENT_GUIDE.md](docs/AI_AGENT_GUIDE.md) — AI 代理行為說明
-- [docs/CUSTOMIZATION.md](docs/CUSTOMIZATION.md) — 領域自訂指南
+- [METHODOLOGY.md](docs/METHODOLOGY.md) — 問題驅動方法論
+- [MIGRATION_V2.md](docs/MIGRATION_V2.md) — 從 v1 升級
+- [SETUP.md](docs/SETUP.md) — 安裝與配置
+- [USER_GUIDE.md](docs/USER_GUIDE.md) — 日常使用
+- [AI_AGENT_GUIDE.md](docs/AI_AGENT_GUIDE.md) — Agent 行為
+- [SCRIPTS_REFERENCE.md](docs/SCRIPTS_REFERENCE.md) — 保留工具清單
 
 ## 授權
 

@@ -6,6 +6,7 @@ structural issues: stub notes, orphaned concepts, broken links,
 MOC coverage gaps, and Zotero-vault sync drift.
 
 Outputs a Markdown report with suggested CLI commands to fix each issue.
+Default report files are written outside the vault to avoid creating git noise.
 
 Usage:
     python vault_health.py                # Full vault-side check
@@ -19,6 +20,7 @@ import argparse
 import os
 import re
 import sys
+import tempfile
 from collections import defaultdict
 from datetime import datetime
 
@@ -30,8 +32,14 @@ from config import (
 # Constants
 # ---------------------------------------------------------------------------
 
-REPORT_FILE = os.path.join(SCRIPTS_DIR, "vault_health_report.md")
-MISSING_DOIS_FILE = os.path.join(SCRIPTS_DIR, "vault_health_missing.txt")
+REPORT_DIR = os.path.normpath(
+    os.environ.get(
+        "VAULT_HEALTH_REPORT_DIR",
+        os.path.join(tempfile.gettempdir(), "obsidian-vault-health"),
+    )
+)
+REPORT_FILE = os.path.join(REPORT_DIR, "vault_health_report.md")
+MISSING_DOIS_FILE = os.path.join(REPORT_DIR, "vault_health_missing.txt")
 
 # Richness thresholds (content lines after YAML frontmatter)
 RICHNESS_LEVELS = [
@@ -43,6 +51,8 @@ RICHNESS_LEVELS = [
 
 # Wiki-link pattern: [[target]] or [[target|alias]]
 WIKILINK_RE = re.compile(r"\[\[([^\]|#]+?)(?:[|#][^\]]*?)?\]\]")
+FENCED_CODE_RE = re.compile(r"```.*?```", re.DOTALL)
+INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
 
 # AI-ENRICHED marker
 AI_ENRICHED_RE = re.compile(r"<!--\s*AI-ENRICHED")
@@ -105,6 +115,25 @@ def _extract_wikilinks(filepath):
     return set(WIKILINK_RE.findall(text))
 
 
+def _strip_markdown_code(text):
+    """Remove fenced and inline code before parsing Markdown links."""
+    text = FENCED_CODE_RE.sub("", text)
+    return INLINE_CODE_RE.sub("", text)
+
+
+def _extract_wikilinks_split_code(filepath):
+    """Extract wikilinks from prose and code regions separately."""
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            text = f.read()
+    except (OSError, UnicodeDecodeError):
+        return set(), set()
+    prose = _strip_markdown_code(text)
+    all_links = set(WIKILINK_RE.findall(text))
+    prose_links = set(WIKILINK_RE.findall(prose))
+    return prose_links, all_links - prose_links
+
+
 def _all_md_files_recursive(root):
     """Walk root and yield all .md file paths."""
     for dirpath, _, filenames in os.walk(root):
@@ -113,6 +142,8 @@ def _all_md_files_recursive(root):
         if basename.startswith(".") or basename == "PDF-raw":
             continue
         for f in filenames:
+            if f == "vault_health_report.md":
+                continue
             if f.endswith(".md"):
                 yield os.path.join(dirpath, f)
 
@@ -129,6 +160,25 @@ def build_vault_index():
         stem = _stem(fpath)
         if stem not in index:
             index[stem] = fpath
+    return index
+
+
+def build_attachment_index():
+    """Build a set of attachment names and vault-relative paths."""
+    index = set()
+    for dirpath, _, filenames in os.walk(VAULT_ROOT):
+        basename = os.path.basename(dirpath)
+        if basename.startswith("."):
+            continue
+        for filename in filenames:
+            ext = os.path.splitext(filename)[1].lower()
+            if ext not in IMAGE_EXTENSIONS:
+                continue
+            fpath = os.path.join(dirpath, filename)
+            rel = os.path.relpath(fpath, VAULT_ROOT)
+            index.add(filename.lower())
+            index.add(rel.replace(os.sep, "/").lower())
+            index.add(rel.replace(os.sep, "\\").lower())
     return index
 
 
@@ -196,40 +246,118 @@ def check_orphans():
 # Extensions that are embedded, not note links
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp",
                     ".canvas", ".pdf"}
+ATTACHMENT_CATEGORY = "疑似缺附件"
 # Single-char or example-only targets to skip
 BROKEN_LINK_SKIP = {
     "A", "B", "C", "X", "target", "citekey", "另一個相關概念", "連結的概念",
     "conceptName", "fig", "gpu",
 }
 
+DEPRECATED_RULE_LINKS = {
+    "/classify-ref",
+    "/enrich",
+    "/onboard-paper",
+    "/process-inbox",
+    "/scholar-digest",
+    "/suggest-tags",
+    "/pdf-to-md",
+}
+
+MEMORY_LINK_RE = re.compile(r"^(feedback[_-]|project[_-]|MEMORY$)")
+FALSE_POSITIVE_CATEGORIES = {"程式碼誤判", "字面示範"}
+
+
+def _broken_link_category(target):
+    """Classify broken wikilinks into actionable governance buckets."""
+    if target in DEPRECATED_RULE_LINKS or target.startswith("/"):
+        return "歷史規則殘留"
+    if MEMORY_LINK_RE.search(target):
+        return "memory wikilink 殘留"
+    return "疑似真缺筆記"
+
+
+def _code_link_category(target):
+    """Classify wikilinks found inside Markdown code regions."""
+    if "$" in target or target.lstrip().startswith("-") or target.startswith("["):
+        return "程式碼誤判"
+    return "字面示範"
+
+
+def _normalize_wikilink_target(target):
+    """Normalize Obsidian targets before note/attachment resolution."""
+    return target.strip().rstrip("\\")
+
+
+def _is_attachment_link(target):
+    """Return True when a wikilink target points to an attachment-like file."""
+    return os.path.splitext(target)[1].lower() in IMAGE_EXTENSIONS
+
+
+def _attachment_exists(target, attachment_index):
+    """Check attachment existence by basename or vault-relative target."""
+    rel = os.path.normpath(target.replace("/", os.sep).replace("\\", os.sep))
+    basename = os.path.basename(rel).lower()
+    normalized_rel = rel.replace(os.sep, "/").lower()
+    return basename in attachment_index or normalized_rel in attachment_index
+
 
 def check_broken_links(vault_index):
     """Find [[target]] where target.md doesn't exist.
 
-    Skips image embeds, single-char placeholders, and non-vault files.
+    Skips valid attachments, single-char placeholders, and non-vault files.
+    Missing attachments are listed separately from missing notes.
+    Returns broken links grouped by category.
     """
-    broken = defaultdict(list)  # target -> [source files]
-    # Skip our own report file to avoid self-referencing
-    skip_files = {os.path.normpath(REPORT_FILE)}
+    attachment_index = build_attachment_index()
+    broken = defaultdict(lambda: defaultdict(list))  # category -> target -> [source files]
     for fpath in _all_md_files_recursive(VAULT_ROOT):
-        if os.path.normpath(fpath) in skip_files:
-            continue
-        targets = _extract_wikilinks(fpath)
-        for t in targets:
-            # Skip image/canvas/pdf embeds
-            if any(t.lower().endswith(ext) for ext in IMAGE_EXTENSIONS):
-                continue
-            # Skip backslash-suffixed (Obsidian table escape artifacts)
-            if t.endswith("\\"):
+        prose_targets, code_targets = _extract_wikilinks_split_code(fpath)
+        rel = os.path.relpath(fpath, VAULT_ROOT)
+
+        for t in code_targets:
+            target = _normalize_wikilink_target(t)
+            if target not in vault_index:
+                broken[_code_link_category(target)][target].append(rel)
+
+        for t in prose_targets:
+            target = _normalize_wikilink_target(t)
+            if _is_attachment_link(target):
+                if not _attachment_exists(target, attachment_index):
+                    broken[ATTACHMENT_CATEGORY][target].append(rel)
                 continue
             # Skip single-char or known placeholders
-            if t in BROKEN_LINK_SKIP or len(t) <= 1:
+            if target in BROKEN_LINK_SKIP or len(target) <= 1:
                 continue
-            if t not in vault_index:
-                rel = os.path.relpath(fpath, VAULT_ROOT)
-                broken[t].append(rel)
+            if target not in vault_index:
+                category = _broken_link_category(target)
+                broken[category][target].append(rel)
 
-    return dict(broken)
+    return {
+        category: dict(targets)
+        for category, targets in broken.items()
+        if targets
+    }
+
+
+def _broken_link_total(broken_by_category, include_false_positive=True):
+    """Count unique broken targets across categories."""
+    categories = broken_by_category.items()
+    if not include_false_positive:
+        categories = (
+            (cat, targets)
+            for cat, targets in broken_by_category.items()
+            if cat not in FALSE_POSITIVE_CATEGORIES
+        )
+    return sum(len(targets) for _, targets in categories)
+
+
+def _broken_link_false_positive_total(broken_by_category):
+    """Count non-actionable broken-link-like targets."""
+    return sum(
+        len(targets)
+        for category, targets in broken_by_category.items()
+        if category in FALSE_POSITIVE_CATEGORIES
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +397,7 @@ def check_moc_coverage():
 def check_ai_enriched():
     """Find concept/paper notes with <!-- AI-ENRICHED --> marker."""
     pending = []
-    # Only scan OV-*/Note/ directories (not skills, enrich-tasks, etc.)
+    # Only scan OV-*/Note/ directories (not skills, scripts, etc.)
     scan_dirs = []
     for folder in OV_FOLDERS.values():
         note_dir = os.path.join(folder, "Note")
@@ -280,10 +408,10 @@ def check_ai_enriched():
         for fpath in _list_md_files(scan_dir):
             try:
                 with open(fpath, "r", encoding="utf-8") as f:
-                    head = f.read(3000)
+                    text = f.read()
             except (OSError, UnicodeDecodeError):
                 continue
-            if AI_ENRICHED_RE.search(head):
+            if AI_ENRICHED_RE.search(text):
                 pending.append(os.path.relpath(fpath, VAULT_ROOT))
     return sorted(pending)
 
@@ -421,6 +549,7 @@ def check_zotero():
     # Write missing DOIs file
     missing_dois = [zi["doi"] for zi in unmatched if zi.get("doi")]
     if missing_dois:
+        os.makedirs(REPORT_DIR, exist_ok=True)
         with open(MISSING_DOIS_FILE, "w", encoding="utf-8") as f:
             f.write("# Zotero papers not found in vault (DOIs)\n")
             f.write(f"# Generated by vault_health.py on {datetime.now():%Y-%m-%d}\n")
@@ -477,7 +606,7 @@ def generate_report(checks, zotero_result=None):
         lines.append("")
         if worst_domain:
             lines.append(
-                f"> 建議：`python prepare_enrich_tasks.py --domain {worst_domain}`\n"
+                f"> 建議：問題驅動模式逐步充實 {worst_domain} 領域的 stub 筆記\n"
             )
 
     # -- Orphans --
@@ -497,13 +626,27 @@ def generate_report(checks, zotero_result=None):
         broken = checks["broken_links"]
         lines.append(f"## 壞連結\n")
         if broken:
-            lines.append(f"共 **{len(broken)}** 個壞連結：\n")
-            for target, sources in sorted(broken.items())[:30]:
-                src_list = ", ".join(sources[:3])
-                more = f" +{len(sources)-3}" if len(sources) > 3 else ""
-                lines.append(f"- `[[{target}]]` ← {src_list}{more}")
-            if len(broken) > 30:
-                lines.append(f"\n（還有 {len(broken)-30} 個未列出）")
+            actionable = _broken_link_total(broken, include_false_positive=False)
+            ignored = _broken_link_false_positive_total(broken)
+            lines.append(
+                f"共 **{actionable}** 個需人工處理的壞連結目標。"
+            )
+            if ignored:
+                lines.append(
+                    f"另有 **{ignored}** 個已分類忽略項"
+                    "（字面示範 / 程式碼誤判），不納入壞連結總數。\n"
+                )
+            else:
+                lines.append("")
+            for category, targets in sorted(broken.items()):
+                lines.append(f"### {category}（{len(targets)}）\n")
+                for target, sources in sorted(targets.items())[:20]:
+                    src_list = ", ".join(sources[:3])
+                    more = f" +{len(sources)-3}" if len(sources) > 3 else ""
+                    lines.append(f"- `[[{target}]]` ← {src_list}{more}")
+                if len(targets) > 20:
+                    lines.append(f"\n（本類還有 {len(targets)-20} 個未列出）")
+                lines.append("")
         else:
             lines.append("無壞連結。")
         lines.append("")
@@ -589,8 +732,7 @@ def generate_report(checks, zotero_result=None):
             stub_count = len(dist.get("stub", []))
             if stub_count >= 5:
                 actions.append(
-                    f"充實 {domain} {stub_count} 個 stub "
-                    f"→ `python prepare_enrich_tasks.py --domain {domain}`"
+                    f"充實 {domain} {stub_count} 個 stub（問題驅動模式逐步補強）"
                 )
 
     if zotero_result and zotero_result["unmatched_count"] > 0:
@@ -605,7 +747,12 @@ def generate_report(checks, zotero_result=None):
             actions.append(f"將 {total_orphans} 個孤兒概念收錄進 MOC")
 
     if "broken_links" in checks and checks["broken_links"]:
-        actions.append(f"修正 {len(checks['broken_links'])} 個壞連結")
+        actionable = _broken_link_total(
+            checks["broken_links"],
+            include_false_positive=False,
+        )
+        if actionable:
+            actions.append(f"修正 {actionable} 個可行動壞連結（程式碼誤判另列觀察）")
 
     for i, action in enumerate(actions, 1):
         lines.append(f"{i}. {action}")
@@ -637,7 +784,15 @@ def generate_summary(checks, zotero_result=None):
         parts.append(f"{total_orphans} 孤兒")
 
     if "broken_links" in checks:
-        parts.append(f"{len(checks['broken_links'])} 壞連結")
+        actionable = _broken_link_total(
+            checks["broken_links"],
+            include_false_positive=False,
+        )
+        ignored = _broken_link_false_positive_total(checks["broken_links"])
+        if ignored:
+            parts.append(f"{actionable} 壞連結需處理（另 {ignored} 忽略項）")
+        else:
+            parts.append(f"{actionable} 壞連結需處理")
 
     if "ai_enriched" in checks:
         parts.append(f"{len(checks['ai_enriched'])} 篇待審")
@@ -712,6 +867,7 @@ def main():
 
     report = generate_report(checks, zotero_result)
 
+    os.makedirs(REPORT_DIR, exist_ok=True)
     with open(REPORT_FILE, "w", encoding="utf-8") as f:
         f.write(report)
 

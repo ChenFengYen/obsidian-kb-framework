@@ -113,15 +113,6 @@ def interactive_config():
             "# Discussion", "# Significance",
         ],
         "figures_section": "## 圖表整理" if language == "zh-TW" else "## Figures",
-        "filtering": {
-            "generic_blocklist": [],
-            "boost_patterns": [],
-            "alias_blocklist": [],
-            "stem_blocklist": ["uv", "id", "ip", "os", "io"],
-            "min_alias_length": 12,
-        },
-        "link_injection": {"scan_dirs": ["OV-Papers/PDF-md"]},
-        "enrichment": {"style_reference": None, "target_level": "basic", "batch_size": 10},
         "capture": {"mode": capture_mode},
         "modules": {"zotero": use_zotero, "paper_pipeline": use_paper},
         "learning": {
@@ -134,7 +125,7 @@ def interactive_config():
             "note_language": language,
             "moc_style": "narrative",
             "link_format": "citekey",
-            "auto_rescan": True,
+            "link_policy": "manual-semantic",
         },
     }
 
@@ -170,18 +161,7 @@ def write_yaml(config, path):
                 f.write(f"    - \"{g}\"\n")
 
 
-def render_template(template_path, context):
-    """Simple {{variable}} template rendering (no Jinja2 dependency)."""
-    with open(template_path, "r", encoding="utf-8") as f:
-        content = f.read()
 
-    # Handle simple {% if %} blocks (remove if condition is falsy)
-    import re
-    # Remove Jinja2 blocks for simplicity — just strip template tags
-    content = re.sub(r"\{%.*?%\}\n?", "", content)
-    # Replace {{ var }} with empty string (will be filled by AI agent)
-    content = re.sub(r"\{\{.*?\}\}", "", content)
-    return content
 
 
 def create_vault(config, target_dir):
@@ -199,7 +179,7 @@ def create_vault(config, target_dir):
 
     # Create OV-Papers structure
     for subdir in ("PDF-md", "PDF-raw", "PDF-assets", "Final-md",
-                    "Template", "scripts", "enrich-tasks"):
+                    "Template", "scripts"):
         os.makedirs(os.path.join(target_dir, "OV-Papers", subdir), exist_ok=True)
     print("  [OK]OV-Papers/ (with subdirectories)")
 
@@ -219,9 +199,19 @@ def create_vault(config, target_dir):
     # Copy skills
     skills_src = os.path.join(SCRIPT_DIR, "prompts", "skills")
     skills_dst = os.path.join(target_dir, ".claude", "skills")
+    installed_skills = 0
     if os.path.isdir(skills_src):
-        shutil.copytree(skills_src, skills_dst, dirs_exist_ok=True)
-        print(f"  [OK]Copied skills to .claude/skills/")
+        for skill_name in sorted(os.listdir(skills_src)):
+            skill_src = os.path.join(skills_src, skill_name)
+            if not os.path.isfile(os.path.join(skill_src, "SKILL.md")):
+                continue
+            shutil.copytree(
+                skill_src,
+                os.path.join(skills_dst, skill_name),
+                dirs_exist_ok=True,
+            )
+            installed_skills += 1
+        print(f"  [OK]Copied {installed_skills} skills to .claude/skills/")
 
     # Copy settings
     settings_src = os.path.join(SCRIPT_DIR, "prompts", "settings.local.json")
@@ -229,13 +219,18 @@ def create_vault(config, target_dir):
         os.makedirs(os.path.join(target_dir, ".claude"), exist_ok=True)
         shutil.copy2(settings_src, os.path.join(target_dir, ".claude", "settings.local.json"))
 
-    # Generate CLAUDE.md (simplified — just copy template for now, AI will customize)
-    claude_src = os.path.join(SCRIPT_DIR, "prompts", "CLAUDE.md.j2")
-    if os.path.isfile(claude_src):
-        content = render_template(claude_src, config)
-        with open(os.path.join(target_dir, "CLAUDE.md"), "w", encoding="utf-8") as f:
-            f.write(content)
-        print("  [OK]CLAUDE.md")
+    # Generate cross-agent core instructions and platform adapters
+    instruction_templates = (
+        ("AGENTS.md", "AGENTS.md"),
+        ("CLAUDE.md", "CLAUDE.md"),
+        ("GEMINI.md", "GEMINI.md"),
+    )
+    for template_name, output_name in instruction_templates:
+        source = os.path.join(SCRIPT_DIR, "prompts", template_name)
+        if not os.path.isfile(source):
+            continue
+        shutil.copy2(source, os.path.join(target_dir, output_name))
+        print(f"  [OK]{output_name}")
 
     # Generate Home.md
     home_content = f"# {config['vault_name']}\n\n"
@@ -245,7 +240,7 @@ def create_vault(config, target_dir):
     home_content += "\n## 工具\n\n"
     home_content += "- `/review-vault` — 檢查知識庫健康狀態\n"
     home_content += "- `/suggest-next` — AI 推薦下一步\n"
-    home_content += "- `/onboard` — 新筆記入庫\n"
+    home_content += "- `/debrief` — 回收本次對話中的知識\n"
     with open(os.path.join(target_dir, "Home.md"), "w", encoding="utf-8") as f:
         f.write(home_content)
     print("  [OK]Home.md")
@@ -271,11 +266,6 @@ def create_vault(config, target_dir):
         f.write(ignore_content)
     print("  [OK].claudeignore")
 
-    # Generate empty enrich-inbox.md
-    with open(os.path.join(target_dir, "OV-Papers", "enrich-inbox.md"), "w", encoding="utf-8") as f:
-        f.write("# Concept Enrichment Queue\n\n<!-- QuickAdd 產生的概念筆記佇列 -->\n")
-    print("  [OK]enrich-inbox.md")
-
     # Optional: copy paper-pipeline
     if config["modules"].get("paper_pipeline"):
         pp_src = os.path.join(SCRIPT_DIR, "paper-pipeline")
@@ -297,7 +287,7 @@ def create_vault(config, target_dir):
     # Copy docs
     docs_src = os.path.join(SCRIPT_DIR, "docs")
     docs_dst = os.path.join(target_dir, "OV-Papers")
-    for fname in ("NOTE_TEMPLATES.md", "PIPELINE_OPS_GUIDE.md", "SCRIPTS_REFERENCE.md"):
+    for fname in ("NOTE_TEMPLATES.md", "PIPELINE_OPS_GUIDE.md", "SCRIPTS_REFERENCE.md", "METHODOLOGY.md", "MIGRATION_V2.md"):
         src = os.path.join(docs_src, fname)
         if os.path.isfile(src):
             shutil.copy2(src, os.path.join(docs_dst, fname))
@@ -306,8 +296,8 @@ def create_vault(config, target_dir):
     print(f"\n下一步：")
     print(f"  1. 用 Obsidian 開啟 {target_dir}")
     print(f"  2. 在該目錄啟動 AI 代理（如 claude）")
-    print(f"  3. 輸入 /init-domain 讓 AI 引導你開始建設知識庫")
-    print(f"  4. 或直接開始提問，AI 會在問題驅動模式中幫你建立筆記")
+    print(f"  3. 直接提出研究或學習問題，讓 AI 先搜尋 vault 再回答")
+    print(f"  4. 使用 /debrief 將已確認的洞見沉澱回知識庫")
 
 
 def main():
