@@ -1,36 +1,50 @@
-vault_name: "Neuroscience KB"
-language: "en"
+vault_name: Neuroscience KB
+language: en
+
 domains:
-  Neuroscience:
-    description: "Neural systems, circuits, and behavior"
-    keywords: [neuroscience, neural circuits, behavior]
-  Imaging:
-    description: "Microscopy and neuroimaging methods"
-    keywords: [microscopy, fMRI, calcium imaging]
-  DataScience:
-    description: "Statistics and computational analysis"
-    keywords: [statistics, machine learning, signal processing]
-default_domain: "Neuroscience"
-section_markers: ["# Background", "# Methods", "# Results", "# Discussion", "# Significance"]
-figures_section: "## Figures"
-figure_extraction:
-  min_width: 500
-  portrait_aspect_range: [0.7, 1.4]
-  graphical_abstract_min_width: 800
-capture:
-  mode: "inline+debrief"
+  Neurobiology:
+    description: Cellular and molecular neuroscience
+    keywords: [neurobiology, neuroscience, synaptic plasticity, neuronal circuits]
+  CognitiveScience:
+    description: Cognition, memory, attention, and perception
+    keywords: [cognition, memory, attention, perception]
+  Neuroimaging:
+    description: Brain imaging methods and analysis
+    keywords: [fMRI, EEG, MEG, PET, neuroimaging]
+  Computational:
+    description: Computational neuroscience and modeling
+    keywords: [computational neuroscience, neural networks, connectomics]
+  Clinical:
+    description: Neurological disorders and treatments
+    keywords: [neurodegeneration, epilepsy, neurological disorders]
+
+default_domain: Neurobiology
+
+learning:
+  goals:
+    - Understand synaptic mechanisms of learning and memory
+    - Master fMRI data analysis pipelines
+  current_focus: Synaptic plasticity
+  experience_level: intermediate
+
+user_profile:
+  areas: [Cognitive Neuroscience, Neuroimaging]
+  knowledge_gaps: [Molecular neurobiology, Computational modeling]
+
+conventions:
+  packs: [core, obsidian, research]
+
 modules:
   zotero: false
   paper_pipeline: false
-learning:
-  goals: ["Understand neural circuit mechanisms"]
-  current_focus: ""
-  experience_level: "intermediate"
-user_profile:
-  research_areas: ["Neuroscience"]
-  knowledge_gaps: []
-preferences:
-  note_language: "en"
-  moc_style: "narrative"
-  link_format: "citekey"
-  link_policy: "manual-semantic"
+  legacy_pipeline: false
+
+agent:
+  adapters: [claude, gemini, legacy]
+
+filtering:
+  generic_blocklist: [data analysis, methodology, result]
+  boost_patterns: [synap, neuron, cortex, hippocamp, plasticity]
+  alias_blocklist: [model, system, process, analysis, data]
+  stem_blocklist: [id, io, os]
+  min_alias_length: 12

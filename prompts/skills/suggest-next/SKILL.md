@@ -1,26 +1,13 @@
 ---
 name: suggest-next
-description: 根據目前問題、知識缺口與來源證據，推薦下一個高價值行動
+description: Suggest the next knowledge-building action from goals, gaps, and graph context
 disable-model-invocation: true
 ---
+# Suggest the next action
 
-# 建議下一步
+1. Read the configured goals and current focus.
+2. Inspect the relevant MOC, connected notes, open questions, and graph gaps.
+3. Recommend three to five concrete actions ordered by expected learning or research value.
+4. Explain why each action matters and which existing notes it connects.
 
-## 流程
-
-1. 讀取 `learning.goals`、`current_focus`、Home 與相關 MOC。
-2. 詢問或推斷目前要回答的具體問題。
-3. 搜尋支持、衝突與缺少證據的筆記。
-4. 提出 3–5 個選項，每項說明：
-   - 它回答哪個問題。
-   - 目前已有什麼基礎。
-   - 缺少什麼證據或連結。
-   - 完成後的預期價值。
-5. 明確推薦其中一項並說明排序理由。
-
-## 約束
-
-- 不因筆記短就自動建議擴寫。
-- 不因沒有連結就假設必須連結。
-- 優先更新會被實際研究使用的概念與來源。
-- 建議具體到筆記、問題或文獻，不輸出泛用待辦。
+Prefer meaningful conceptual or evidence gaps over the shortest files. Do not create notes or links until the user confirms the recommendation.

@@ -1,161 +1,49 @@
-# 筆記與 MOC 範例模板
+# Note templates
 
-本文件集中管理筆記格式範例，供 Claude Code 首次充實筆記或建立 MOC 時參考。
+Templates are starting points, not completeness checklists. Keep only sections that help the concept.
 
----
-
-## 首頁筆記結構
-
-Home.md 作為知識系統的入口點：
+## Concept note
 
 ```markdown
-# 首頁 (Home)
+# Concept name
 
-## 研究領域
-[[植物表型分析_MOC]]
-[[電腦視覺 MOC]]
-[[AI 方法 MOC]]
+## Definition and boundary
 
-## 研究基礎設施
-[[AI 管線 MOC]]
-[[程式設計 MOC]]
+Explain what the concept is, what it is not, and how it differs from nearby concepts.
 
-## 知識來源
-[[論文 MOC]]
-[[研究方法 MOC]]
+## Key relationships
 
-## 思考與探索
-[[研究想法 MOC]]
+Describe meaningful links in sentences.
+
+## Evidence or examples
+
+Record traceable support and uncertainty when relevant.
+
+## Open questions
+
+- Add questions that can guide future work.
 ```
 
----
-
-## MOC 範例
-
-以植物表型分析 MOC 為基準：
+## MOC
 
 ```markdown
-# 植物表型分析
+# Domain name
 
-植物表型分析的核心目標是從影像中非破壞性地量化植物性狀。
-流程從影像擷取開始，經過分割和特徵萃取，最終連結到生理意義。
+Orient the reader to the domain and the perspective of this vault.
 
-## 影像擷取與校正
-[[植物造影系統]]
-[[相機校正]]
+## Relationship group
 
-## 分割方法
-從像素級到實例級，分割是所有下游量化的基礎：
-- 語意分割：[[Segment Anything Model]]
-- 實例分割：[[YOLO 分割]]、[[葉片分割]]
-- 3D 分割：[[體素]]模型 + 屬性擴展法（[[itakura2018automatic]]）
+Explain why the linked concepts belong together and how they interact.
 
-## 結構性狀量化
-- [[葉面積]] — 光合面積的直接指標
-- [[葉傾角]] — 冠層光分佈的決定因子
-- 兩者結合決定 LAI 和光截獲效率
+## Current focus
 
-## 生理指標橋接
-影像表型與生理的橋樑：
-- [[Fv／Fm]]、[[電子傳遞速率]] — 螢光成像可量化的光合指標
-- 高光譜 → 葉綠素含量估算
+Describe the active learning, research, or application angle.
 
-## 時序追蹤
-- [[DeepSORT]]、[[ByteTrack]] — 多物件追蹤方法
-- 追蹤 + 分割 → 個體葉片的面積生長曲線
+## Open questions
 
-## 待釐清
-- 2D 投影面積與 3D 實際面積的偏差能否用葉傾角分佈校正？
-- 影像衍生指標能否取代破壞性取樣估算淨同化速率（NAR）？
+- Add unresolved questions.
 ```
 
----
+## Experiment record
 
-## 概念筆記結構
-
-```markdown
-# 筆記標題
-
-## 定義
-簡短解釋該概念。
-
-## 說明
-詳細的描述或筆記。
-
-## 我的理解
-在使用者自身情境下的詮釋。
-
-## 應用
-如何應用於使用者的研究中。
-
-## 相關筆記
-[[連結的概念]]
-[[另一個相關概念]]
-
-## 待解決問題
-值得後續探索的問題。
-```
-
----
-
-## 輸出格式
-
-組織筆記時，請輸出：
-
-1. 改進後的筆記
-2. 建議的內部連結
-3. 建議的 MOC 位置
-4. 建議的相關筆記
-5. 可能的研究問題
-
----
-
-## 輸出範例
-
-筆記標題：葉片分割
-建議的 MOC：植物表型分析 MOC
-
-```markdown
-# 葉片分割
-
-## 定義
-葉片分割是指在植物影像中將葉片區域從背景像素中分離出來的過程。
-
-## 方法
-- 閾值法
-- 傳統影像處理
-- 深度學習分割
-
-## 深度學習方法
-- [[YOLOv8 分割]]
-- [[Segment Anything Model]]
-- [[Mask R-CNN]]
-
-## 應用
-- 葉面積測量
-- 生長分析
-- 疾病檢測
-
-## 相關筆記
-[[植物表型分析]]
-[[實例分割]]
-[[影像分割]]
-
-## 待解決問題
-- 如何追蹤不同時間點的葉片？
-- 如何處理重疊的葉片？
-```
-
----
-
-## 處理使用者筆記的步驟
-
-當收到原始筆記時：
-
-1. 清理文字
-2. 擷取主要概念
-3. 若有需要，拆分成具意義的獨立筆記
-4. 建議連結
-5. 建議該筆記屬於哪個 MOC
-6. 改善結構
-7. 找出潛在的研究想法
+When the research pack is enabled, include question, experimental unit, data and protocol versions, groups, inclusion rules, methods, environment, run identifier, outputs, and deviations.

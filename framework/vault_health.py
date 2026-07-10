@@ -834,7 +834,9 @@ def main():
 
     checks = {}
 
-    if run_all or args.richness:
+    # Length-based richness is retained for v1 compatibility but is not a
+    # default quality signal. Request it explicitly with --richness.
+    if args.richness:
         print("  Checking note richness...")
         checks["richness"] = check_richness()
 

@@ -1,60 +1,25 @@
-# 方法論：問題驅動知識建設
+# Methodology
 
-## 核心命題
+## Knowledge network
 
-知識庫的價值不由筆記數量或行數決定，而由它能否協助使用者回答問題、形成判斷並保留可驗證的推理脈絡決定。
+The vault uses `Home -> MOCs -> Notes` as a navigation pattern. Folders provide ownership and tooling boundaries; deliberate links express relationships.
 
-## 導航骨架
+A MOC explains how concepts relate, where the user enters the topic, and which questions remain open. It is not an alphabetical directory.
 
-```text
-Home → Domain MOC → Concept / Project / Source notes
-```
+## Question-driven growth
 
-- Home 提供少量高層入口。
-- MOC 描述概念之間的關係與研究視角。
-- Concept note 聚焦一個可獨立理解的概念。
-- Source note 保存來源內容與可追溯證據。
-- Project note 保存正在推進的問題、決策與下一步。
+Questions act as pressure tests for the vault:
 
-資料夾負責檔案管理；連結與 MOC 負責知識關係。
+1. Search existing knowledge.
+2. Synthesize an answer with traceable sources.
+3. Identify missing, weak, or contradictory knowledge.
+4. Propose a focused update.
+5. Write only after approval when the vault contract requires it.
 
-## 問題驅動循環
+## Quality model
 
-1. 使用者提出具體問題。
-2. AI 搜尋 vault 與現有來源。
-3. 回答並指出充分、缺漏或錯誤之處。
-4. 提出更新既有筆記或建立新筆記的候選。
-5. 使用者確認後寫入。
-6. 驗證連結、來源與下次繼續點。
+Do not classify note quality by line count. Evaluate conceptual clarity, boundaries, evidence, outgoing and incoming relationships, MOC placement, and usefulness for future questions.
 
-這個循環讓知識增長服從實際需求，而不是讓使用者追著自動產生的工作佇列跑。
+## Automation boundary
 
-## 連結哲學
-
-wikilink 是語意判斷，不是字串匹配。只有當目標筆記能幫助讀者理解當前內容時才建立連結。
-
-- 不批量注入連結。
-- 不為消除紅連結建立空 stub。
-- 允許經過思考的未來概念連結，但必須是明確的知識建設意圖。
-- MOC 中優先使用敘述性連結，說明節點之間的關係。
-
-## 品質判準
-
-- 是否回答一個可辨識的問題。
-- 定義與邊界是否清楚。
-- 是否有可信來源及必要的多源驗證。
-- 是否包含研究用途、限制或反例。
-- 是否被合理地放進 MOC 與知識網路。
-
-短筆記可以完整，長筆記也可能只是堆疊。行數僅能作為診斷訊號，不能作為自動擴寫目標。
-
-## 知識回收
-
-對話中的結論、否定性發現、設計決策與跨概念關係，可透過 `/debrief` 提出候選。寫入時優先更新既有筆記，並保留來源、限制與未解決問題。
-
-## 多源驗證
-
-- 教科書或成熟共識可直接陳述並註明來源。
-- 單篇研究的新發現必須連到來源並標示驗證狀態。
-- 重要概念原則上由兩個以上獨立來源支持。
-- 找不到足夠證據時應保留不確定性，不補造門檻或結論。
+Automation is appropriate for deterministic discovery and validation. Links, conceptual decomposition, evidence interpretation, and MOC structure require contextual judgment. Legacy bulk tools remain optional and must use dry-run plus review.

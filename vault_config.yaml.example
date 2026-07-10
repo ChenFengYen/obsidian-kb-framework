@@ -1,49 +1,43 @@
-# obsidian-kb-framework v2 configuration
-vault_name: "My Research KB"
-language: "zh-TW"
+vault_name: My Knowledge Base
+language: en
 
-# Each entry creates OV-{name}/Map, Note, and Pic.
 domains:
-  Bioinformatics:
-    description: "生物資訊與生命科學"
-    keywords: [bioinformatics, genomics, plant biology]
-  MachineLearning:
-    description: "機器學習與電腦視覺"
-    keywords: [machine learning, deep learning, computer vision]
+  General:
+    description: General knowledge and cross-domain questions
+    keywords: []
 
-default_domain: "MachineLearning"
+default_domain: General
 
-# Used only by the optional paper figure tools.
-section_markers:
-  - "# 基本資訊"
-  - "# 研究方法"
-  - "# 結果"
-  - "# 討論"
-figures_section: "## 圖表整理"
-figure_extraction:
-  min_width: 500
-  portrait_aspect_range: [0.7, 1.4]
-  graphical_abstract_min_width: 800
+learning:
+  experience_level: intermediate
+  current_focus: null
+  goals: []
 
-# Knowledge changes remain proposal-first. No automatic link injection.
-capture:
-  mode: "inline+debrief"  # debrief | inline+debrief | journal+debrief
+user_profile:
+  areas: []
+  knowledge_gaps: []
+
+conventions:
+  # core and obsidian are recommended defaults.
+  # Add research or windows-zh-tw only when applicable.
+  packs:
+    - core
+    - obsidian
 
 modules:
   zotero: false
   paper_pipeline: false
 
-learning:
-  goals: []
-  current_focus: ""
-  experience_level: "beginner"
+agent:
+  # Codex and other AGENTS-aware tools read AGENTS.md directly.
+  adapters:
+    - claude
+    - gemini
+    - legacy
 
-user_profile:
-  research_areas: []
-  knowledge_gaps: []
-
-preferences:
-  note_language: "zh-TW"
-  moc_style: "narrative"
-  link_format: "citekey"
-  link_policy: "manual-semantic"
+filtering:
+  generic_blocklist: []
+  boost_patterns: []
+  alias_blocklist: []
+  stem_blocklist: [id, io, os]
+  min_alias_length: 12

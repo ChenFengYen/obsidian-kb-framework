@@ -1,41 +1,34 @@
-# 論文處理指南
+# Paper processing module
 
-## 目標
+This optional module stores source PDFs, structured source notes, and extracted assets under `OV-Papers`.
 
-將論文保留為可追溯的 source note，並在真正回答研究問題時，將經確認的洞見整合到概念筆記與 MOC。
+## Principles
 
-## 目錄
+- Treat the PDF as the source of truth.
+- Preserve title, author, year, identifier, and page provenance when available.
+- Use `null` for unknown structured scalar values rather than plausible guesses.
+- Keep supplementary material separate from the main paper record.
+- Store extracted figures with source page and caption provenance.
+- Mark AI-generated summaries and metadata as unreviewed until verified.
+- Do not inject conceptual links solely from keyword matches.
+
+## Suggested layout
 
 ```text
-PDF-raw/{citekey}.pdf
-  → PDF-md/{citekey}.md
-  → 人工審查
-  → Final-md/{citekey}.md
+OV-Papers/
+  PDF-raw/       source files
+  PDF-md/        structured source notes
+  PDF-assets/    extracted figures and tables
+  Final-md/      reviewed notes when the workflow uses a review stage
+  scripts/       optional processing tools
 ```
 
-`PDF-md` 可以是機器協助產生的工作版本；`Final-md` 是人工審查後的高品質版本。兩者都不會觸發自動概念連結。
+## Workflow
 
-## 建議內容
+1. Confirm the source file and identifier.
+2. Extract text or figures without overwriting the source.
+3. Build a structured note with page-level provenance.
+4. Validate citations, formulas, identifiers, and missing values.
+5. Present the result for review before promoting it to durable knowledge.
 
-- 書目與 citekey
-- 研究問題與背景
-- 方法與資料
-- 主要結果
-- 限制與適用邊界
-- 與目前研究的關聯
-- 可追溯的圖表引用
-- 待驗證問題
-
-## 圖表工具
-
-啟用 `paper_pipeline` 後可使用 `extract_figures.py` 與 `insert_figures.py`。先 dry-run，目視確認圖號、caption 與實際內容，再寫入 Markdown。
-
-## 知識整合
-
-當論文被用來回答問題時：
-
-1. 指出它支持或反駁哪個主張。
-2. 檢查是否已有概念筆記。
-3. 優先更新既有筆記並連回 `[[citekey]]`。
-4. 單篇新發現標示為待多源驗證。
-5. 不因術語出現就建立新概念或批量加入 wikilink。
+Automation should prepare evidence and deterministic metadata. Interpretation, conceptual linking, and research claims require contextual review.

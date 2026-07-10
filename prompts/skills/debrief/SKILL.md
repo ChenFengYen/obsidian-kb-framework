@@ -1,24 +1,10 @@
 ---
 name: debrief
-description: 回顧對話，提出可沉澱洞見，取得確認後寫入並驗證
+description: Review a session and propose durable knowledge updates for approval
 disable-model-invocation: true
 ---
+# Debrief a session
 
-# Session 知識回收
+Identify durable conclusions, corrections, negative findings, decisions, and cross-note relationships from the conversation. Classify each proposed update as an existing note edit, new note, Convention feedback, or project state.
 
-## 流程
-
-1. 回顧本次對話，找出結論、否定性發現、設計決策、修正、跨概念關係與未解問題。
-2. 搜尋可能承接內容的既有筆記。
-3. 提出清單：目標筆記、預計段落、內容摘要、來源或不確定性。
-4. 只有在內容能獨立成立且沒有重複時，才建議新筆記。
-5. 詢問使用者要全部、部分執行或跳過。
-6. 確認後逐項寫入，檢查 wikilink 與 diff。
-7. 輸出本次已沉澱項目與下次繼續點。
-
-## 約束
-
-- 優先更新既有筆記。
-- 不把操作紀錄或閒聊硬轉成知識。
-- 不自動建立 stub，不執行自動 link rescan。
-- 若沒有長期價值內容，直接說明，不湊數。
+Present the proposed destinations and exact substance first. Write only the items the user approves. Prefer updating an existing note over creating a fragment, and never inject links mechanically after the update.
