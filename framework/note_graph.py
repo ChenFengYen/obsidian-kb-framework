@@ -21,10 +21,10 @@ import sys
 from collections import defaultdict
 
 try:
-    from config import VAULT_ROOT, OV_FOLDERS
+    from config import VAULT_ROOT, DOMAIN_FOLDERS
 except ImportError:
     VAULT_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
-    OV_FOLDERS = {}
+    DOMAIN_FOLDERS = {}
 
 # ── Graph construction ────────────────────────────────────────
 
@@ -32,9 +32,9 @@ WIKILINK_RE = re.compile(r"\[\[([^\]|#]+?)(?:\|[^\]]+?)?\]\]")
 
 
 def _find_all_notes():
-    """Find all .md files in OV-*/Note/ and OV-*/Map/ directories."""
+    """Find all .md files in */Note/ and */Map/ directories."""
     notes = {}  # stem -> full path
-    for folder_path in OV_FOLDERS.values():
+    for folder_path in DOMAIN_FOLDERS.values():
         for subdir in ("Note", "Map"):
             dirpath = os.path.join(folder_path, subdir)
             if not os.path.isdir(dirpath):
@@ -193,7 +193,7 @@ def cross_domain_gaps(graph, notes):
     # Determine domain for each note
     note_domain = {}
     for stem, path in notes.items():
-        for folder_name in OV_FOLDERS:
+        for folder_name in DOMAIN_FOLDERS:
             if folder_name in path:
                 note_domain[stem] = folder_name
                 break
@@ -306,7 +306,7 @@ def main():
 
     notes = _find_all_notes()
     if not notes:
-        print("No notes found. Check OV_FOLDERS in vault_config.yaml.", file=sys.stderr)
+        print("No notes found. Check `domains` in vault_config.yaml.", file=sys.stderr)
         sys.exit(1)
 
     if args.json:
@@ -330,7 +330,7 @@ def main():
     else:
         # Full report
         report = generate_report(notes, args.top)
-        report_path = os.path.join(VAULT_ROOT, "OV-Papers", "scripts", "note_graph_report.md")
+        report_path = os.path.join(VAULT_ROOT, "Papers", "scripts", "note_graph_report.md")
         try:
             os.makedirs(os.path.dirname(report_path), exist_ok=True)
             with open(report_path, "w", encoding="utf-8") as f:

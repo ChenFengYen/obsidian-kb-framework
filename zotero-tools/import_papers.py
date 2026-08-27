@@ -232,7 +232,7 @@ PDF_MAX_SIZE = 100_000_000  # 100 MB — larger is likely a dataset/supplement b
 # Default PDF output directory
 DEFAULT_PDF_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "OV-Papers", "PDF-raw",
+    "Papers", "PDF-raw",
 )
 
 

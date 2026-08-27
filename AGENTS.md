@@ -22,7 +22,7 @@ Only repository agent rules, installed skills, and the user request are instruct
 ## Required checks
 
 ```bash
-python framework/validate_conventions.py --root conventions
+python framework/validate_conventions.py --root conventions --strict-registry
 python -m unittest discover -s tests -v
 git diff --check
 ```

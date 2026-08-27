@@ -31,9 +31,9 @@ MOC 應包含領域敘述、主題分組、跨概念關係、研究切入點與�
 ## 健康檢查
 
 ```bash
-python OV-Papers/scripts/vault_health.py --summary
-python OV-Papers/scripts/vault_health.py --broken-links
-python OV-Papers/scripts/note_graph.py
+python Papers/scripts/vault_health.py --summary
+python Papers/scripts/vault_health.py --broken-links
+python Papers/scripts/note_graph.py
 ```
 
 - broken link 先分類為真缺筆記、歷史殘留、程式碼誤判。

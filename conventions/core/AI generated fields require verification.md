@@ -1,6 +1,6 @@
 ---
 type: convention
-rule_id: KB-AI-001
+rule_id: KB-EVIDENCE-004
 scope: [provenance, metadata]
 applies_to: [all-agents]
 triggers: [ai-generated-field, citation, formula, identifier]

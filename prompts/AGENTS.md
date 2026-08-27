@@ -68,7 +68,7 @@ Home → Domain MOC → Concept / Project / Source notes
 
 - 未經確認不做批次修改、批次重命名或大規模搬移。
 - 診斷命令預設唯讀，報告寫到系統暫存目錄。
-- 修改前閱讀 `OV-Papers/NOTE_TEMPLATES.md` 與相關領域 MOC。
+- 修改前閱讀 `Papers/NOTE_TEMPLATES.md` 與相關領域 MOC。
 - 使用 skill 時遵循該 skill 的核准與驗證步驟。
 
 ## 可用 Skills

@@ -1,0 +1,245 @@
+# Convention rule_id registry — single source of truth for the KB-* namespace.
+#
+# Every Convention note, in this repository or in any vault generated from it,
+# must carry a rule_id listed here. `validate_conventions.py --registry` enforces
+# that: an unlisted id fails, and two notes claiming one id fail.
+#
+# status:
+#   shipped  - the Convention note lives in this repository, under `pack`.
+#   reserved - the id is taken by an upstream vault; the note has not been made
+#              portable yet. Reserved ids are recorded so a new Convention never
+#              silently reuses a number that already means something elsewhere.
+#
+# Adding a rule: append to `rules`, never renumber an existing entry. Ids are
+# permanent even after a note is superseded — see KB-HISTORY-001.
+
+version: 1
+
+# Prefixes owned by downstream vaults. Their contents are domain-specific and
+# deliberately absent here; this repository only reserves the namespace so
+# generic KB-* numbering can never collide with a domain rule.
+reserved_prefixes:
+  - prefix: PHENO-
+    owner: downstream vault (plant phenotyping)
+  - prefix: ML-
+    owner: downstream vault (machine learning)
+
+rules:
+  - id: KB-ACCESS-001
+    name: Fixed operation vocabulary for knowledge base access
+    name_zh: 知識庫存取須用固定操作
+    status: reserved
+
+  - id: KB-ASSET-001
+    name: Image asset naming
+    name_zh: 圖片命名規約
+    status: reserved
+
+  - id: KB-AUTOMATION-001
+    name: Segment LLM workflows under subscription limits
+    name_zh: 訂閱模式LLM工作流分段
+    status: reserved
+
+  - id: KB-CHANGE-001
+    name: Approval before destructive or published changes
+    name_zh: 變更提交前核准
+    status: shipped
+    pack: core
+
+  - id: KB-COLLAB-001
+    name: Feasibility before implementation
+    name_zh: 可行性問題與實作請求分流
+    status: shipped
+    pack: core
+
+  - id: KB-DATA-001
+    name: Use structured parsers for structured data
+    name_zh: CSV必須使用標準解析器
+    status: shipped
+    pack: core
+
+  - id: KB-DATA-002
+    name: Version the analysis population
+    status: shipped
+    pack: core
+
+  - id: KB-DATA-003
+    name: Separate source and derived data
+    status: shipped
+    pack: core
+
+  - id: KB-ENCODING-001
+    name: Windows UTF-8 file safety
+    name_zh: Windows UTF8輸出與中文檔案安全
+    status: shipped
+    pack: windows-zh-tw
+
+  - id: KB-EVIDENCE-001
+    name: Do not invent facts or thresholds
+    name_zh: 不捏造數值門檻
+    status: shipped
+    pack: core
+
+  - id: KB-EVIDENCE-002
+    name: Literature search completeness
+    name_zh: 文獻搜尋完整性
+    status: reserved
+
+  - id: KB-EVIDENCE-003
+    name: Multi-source verification for concept notes
+    name_zh: 概念多源驗證
+    status: reserved
+
+  - id: KB-EVIDENCE-004
+    name: AI generated fields require verification
+    name_zh: LLM生成內容的來源標註與引用界線
+    status: shipped
+    pack: core
+    former_ids: [KB-AI-001]
+
+  - id: KB-EVIDENCE-005
+    name: Match claim strength to evidence
+    status: shipped
+    pack: research
+    former_ids: [KB-RESEARCH-001]
+
+  - id: KB-EXPERIMENT-001
+    name: Record experiment specifications
+    name_zh: 乾實驗環境規格
+    status: shipped
+    pack: research
+
+  - id: KB-FRONTMATTER-001
+    name: Frontmatter remains structured
+    name_zh: Frontmatter清單格式
+    status: shipped
+    pack: obsidian
+
+  - id: KB-FRONTMATTER-002
+    name: Frontmatter field semantics
+    name_zh: Frontmatter欄位語意
+    status: reserved
+
+  - id: KB-HISTORY-001
+    name: Preserve large note and convention history
+    name_zh: 大型筆記與規約歷程保留
+    status: reserved
+
+  - id: KB-LANG-001
+    name: Traditional Chinese wording in notes
+    name_zh: 繁體中文筆記用詞
+    status: reserved
+
+  - id: KB-LANG-002
+    name: Space around inline markers in CJK text
+    name_zh: 中文粗體前後加半形空格
+    status: reserved
+
+  - id: KB-LINK-001
+    name: Obsidian link safety
+    name_zh: Obsidian連結規約
+    status: shipped
+    pack: obsidian
+
+  - id: KB-MATH-001
+    name: Math formula formatting
+    name_zh: 數學公式格式
+    status: reserved
+
+  - id: KB-METHOD-001
+    name: Prefer simple justified methods
+    name_zh: 簡單有依據的方法論優先
+    status: reserved
+
+  - id: KB-OUTPUT-001
+    name: Separate temporary work from durable knowledge
+    name_zh: Vault工作產物與腳本分層
+    status: shipped
+    pack: core
+
+  - id: KB-PAPER-001
+    name: PDF and YAML missing value handling
+    name_zh: PDF與YAML缺值規約
+    status: reserved
+
+  - id: KB-PAPER-002
+    name: Supplementary material gets its own note
+    name_zh: 論文補充材料獨立建檔
+    status: reserved
+
+  - id: KB-PRECISION-001
+    name: Make sources traceable
+    name_zh: 學術引用與術語精確性
+    status: shipped
+    pack: research
+    former_ids: [KB-RESEARCH-002]
+
+  - id: KB-STRUCT-001
+    name: Vault directory and note type structure
+    name_zh: Vault目錄與筆記型別規約
+    status: reserved
+
+  - id: KB-TABLE-001
+    name: Markdown tables and multi-image layout
+    name_zh: Markdown表格與多圖排版
+    status: reserved
+
+  - id: KB-TITLE-001
+    name: Concept note titles
+    name_zh: 概念筆記標題規約
+    status: reserved
+
+  - id: KB-VCS-001
+    name: Ignore rules must survive directory renames
+    name_zh: 忽略規則與目錄改名
+    status: reserved
+
+  - id: KB-VERIFY-001
+    name: Confirm the measurement method before trusting numbers
+    name_zh: 驗證數字前先確認量測方法
+    status: reserved
+
+  - id: KB-VERIFY-002
+    name: Counterbalance presentation order in paired comparison
+    name_zh: 成對比較須抵銷呈現順序
+    status: reserved
+
+  - id: KB-VERIFY-003
+    name: Verification tools must not truncate by default
+    name_zh: 驗證工具預設必須不省略
+    status: reserved
+
+  - id: KB-VISUAL-001
+    name: Sequential palette runs high red to low blue
+    name_zh: 連續色盤使用高紅低藍
+    status: reserved
+
+  - id: KB-VISUAL-002
+    name: matplotlib CJK font rendering
+    name_zh: matplotlib中文字型渲染
+    status: reserved
+
+  - id: KB-VISUAL-003
+    name: ASCII diagram alignment
+    name_zh: ASCII示意圖對齊規約
+    status: reserved
+
+  - id: KB-VOCAB-001
+    name: Classification vocabularies must be closed
+    name_zh: 分類詞彙必須封閉
+    status: reserved
+
+  - id: KB-WRITING-001
+    name: Notes teach, they do not log edits
+    name_zh: 筆記不寫修改過程
+    status: reserved
+
+  - id: KB-WRITING-002
+    name: Choose a narrative mode before enriching a note
+    name_zh: 豐富筆記先選敘事模式
+    status: reserved
+
+  - id: KB-WRITING-003
+    name: Callouts need an entry point in the body
+    name_zh: callout須有正文入口
+    status: reserved

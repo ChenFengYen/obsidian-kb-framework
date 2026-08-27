@@ -8,12 +8,12 @@ Cross-references with ![[...]] embeds in all .md files to identify:
   - Stray images outside of Pic/ directories
   - Double-extension issues
 
-Outputs a structured report to OV-Papers/scripts/image_audit_report.md.
+Outputs a structured report to Papers/scripts/image_audit_report.md.
 
 Usage:
     python audit_images.py              # Full audit
     python audit_images.py --unreferenced-only   # Only list unreferenced images
-    python audit_images.py --domain OV-Docker     # Audit a single domain
+    python audit_images.py --domain Docker     # Audit a single domain
 """
 import argparse
 import os
@@ -21,14 +21,14 @@ import re
 from collections import defaultdict
 from datetime import datetime
 
-from config import VAULT_ROOT, OV_FOLDERS, PDF_ASSETS_DIR
+from config import VAULT_ROOT, DOMAIN_FOLDERS, PDF_ASSETS_DIR
 
 # ── Image extensions ─────────────────────────────────────────
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".webp"}
 
 # ── Output ───────────────────────────────────────────────────
 REPORT_FILE = os.path.join(
-    VAULT_ROOT, "OV-Papers", "scripts", "image_audit_report.md"
+    VAULT_ROOT, "Papers", "scripts", "image_audit_report.md"
 )
 
 # ── Naming pattern classifiers ───────────────────────────────
@@ -115,7 +115,7 @@ def find_all_references(domain_filter: str | None = None) -> dict[str, list[str]
         if domain_filter:
             rel = os.path.relpath(dirpath, VAULT_ROOT)
             top = rel.split(os.sep)[0]
-            if top.startswith("OV-") and top != domain_filter:
+            if top in DOMAIN_FOLDERS and top != domain_filter:
                 continue
 
         for f in filenames:
@@ -280,7 +280,7 @@ def generate_report(
 def main():
     parser = argparse.ArgumentParser(description="Audit images in Obsidian vault")
     parser.add_argument(
-        "--domain", help="Only audit a specific OV-* domain (e.g. OV-Docker)"
+        "--domain", help="Only audit a specific * domain (e.g. Docker)"
     )
     parser.add_argument(
         "--unreferenced-only",
@@ -291,21 +291,21 @@ def main():
 
     all_images: list[dict] = []
 
-    # 1. Scan Pic/ directories in each OV-* folder
-    folders = OV_FOLDERS
+    # 1. Scan Pic/ directories in each * folder
+    folders = DOMAIN_FOLDERS
     if args.domain:
-        if args.domain not in OV_FOLDERS:
+        if args.domain not in DOMAIN_FOLDERS:
             print(f"Unknown domain: {args.domain}")
-            print(f"Available: {', '.join(sorted(OV_FOLDERS))}")
+            print(f"Available: {', '.join(sorted(DOMAIN_FOLDERS))}")
             return
-        folders = {args.domain: OV_FOLDERS[args.domain]}
+        folders = {args.domain: DOMAIN_FOLDERS[args.domain]}
 
     for name, folder_path in sorted(folders.items()):
         pic_dir = os.path.join(folder_path, "Pic")
         all_images.extend(find_images(pic_dir, recursive=False))
 
     # 2. Scan PDF-assets/
-    if not args.domain or args.domain == "OV-Papers":
+    if not args.domain or args.domain == "Papers":
         all_images.extend(find_images(PDF_ASSETS_DIR, recursive=False))
 
     # 3. Scan vault root for stray images

@@ -25,7 +25,7 @@ from collections import defaultdict
 from datetime import datetime
 
 from config import (
-    VAULT_ROOT, OV_FOLDERS, PDF_MD_DIR, PDF_RAW_DIR, SCRIPTS_DIR,
+    VAULT_ROOT, DOMAIN_FOLDERS, PDF_MD_DIR, PDF_RAW_DIR, SCRIPTS_DIR,
 )
 
 # ---------------------------------------------------------------------------
@@ -153,13 +153,60 @@ def _all_md_files_recursive(root):
 # ---------------------------------------------------------------------------
 
 
+def _extract_aliases(filepath):
+    """Extract YAML frontmatter aliases. Obsidian resolves [[alias]] to the note,
+    so link checks must treat aliases as valid targets."""
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            head = f.read(4000)
+    except (OSError, UnicodeDecodeError):
+        return []
+
+    if not head.startswith("---"):
+        return []
+    end = head.find("\n---", 3)
+    if end == -1:
+        return []
+    block = head[3:end]
+
+    m = re.search(r"^aliases:[ \t]*(.*)$", block, re.M)
+    if not m:
+        return []
+
+    inline = m.group(1).strip()
+    if inline:
+        # aliases: [A, B]  or  aliases: A
+        inline = inline.strip("[]")
+        return [a.strip().strip("\"'") for a in inline.split(",") if a.strip()]
+
+    # Block form: subsequent "  - value" lines
+    out = []
+    for line in block[m.end():].splitlines():
+        if re.match(r"^[ \t]*-[ \t]+", line):
+            out.append(re.sub(r"^[ \t]*-[ \t]+", "", line).strip().strip("\"'"))
+        elif line.strip() and not line.startswith((" ", "\t")):
+            break
+    return [a for a in out if a]
+
+
 def build_vault_index():
-    """Build a mapping of all .md stems to their paths."""
+    """Build a mapping of all .md stems to their paths, plus frontmatter aliases.
+
+    Aliases are included because Obsidian resolves `[[alias]]` to the owning note;
+    omitting them makes valid links look broken. Real filenames always win over an
+    alias claiming the same name.
+    """
     index = {}  # stem -> path
+    alias_index = {}
     for fpath in _all_md_files_recursive(VAULT_ROOT):
         stem = _stem(fpath)
         if stem not in index:
             index[stem] = fpath
+        for alias in _extract_aliases(fpath):
+            if alias not in alias_index:
+                alias_index[alias] = fpath
+    for alias, fpath in alias_index.items():
+        index.setdefault(alias, fpath)
     return index
 
 
@@ -190,7 +237,7 @@ def build_attachment_index():
 def check_richness():
     """Compute richness distribution per domain."""
     results = {}  # domain -> {level: [stems]}
-    for domain, folder in sorted(OV_FOLDERS.items()):
+    for domain, folder in sorted(DOMAIN_FOLDERS.items()):
         note_dir = os.path.join(folder, "Note")
         notes = _list_md_files(note_dir)
         dist = defaultdict(list)
@@ -211,14 +258,14 @@ def check_orphans():
     """Find concept notes not referenced by any Map/*.md."""
     # Collect all concept note stems per domain
     all_concepts = {}  # domain -> set of stems
-    for domain, folder in sorted(OV_FOLDERS.items()):
+    for domain, folder in sorted(DOMAIN_FOLDERS.items()):
         note_dir = os.path.join(folder, "Note")
         notes = _list_md_files(note_dir)
         all_concepts[domain] = {_stem(f) for f in notes}
 
     # Collect all wikilink targets from Map/ files across all domains
     moc_linked = set()
-    for domain, folder in OV_FOLDERS.items():
+    for domain, folder in DOMAIN_FOLDERS.items():
         map_dir = os.path.join(folder, "Map")
         for fpath in _list_md_files(map_dir):
             moc_linked.update(_extract_wikilinks(fpath))
@@ -368,7 +415,7 @@ def _broken_link_false_positive_total(broken_by_category):
 def check_moc_coverage():
     """Per domain: how many notes are covered by MOCs."""
     results = {}
-    for domain, folder in sorted(OV_FOLDERS.items()):
+    for domain, folder in sorted(DOMAIN_FOLDERS.items()):
         note_dir = os.path.join(folder, "Note")
         map_dir = os.path.join(folder, "Map")
         notes = {_stem(f) for f in _list_md_files(note_dir)}
@@ -397,9 +444,9 @@ def check_moc_coverage():
 def check_ai_enriched():
     """Find concept/paper notes with <!-- AI-ENRICHED --> marker."""
     pending = []
-    # Only scan OV-*/Note/ directories (not skills, scripts, etc.)
+    # Only scan */Note/ directories (not skills, scripts, etc.)
     scan_dirs = []
-    for folder in OV_FOLDERS.values():
+    for folder in DOMAIN_FOLDERS.values():
         note_dir = os.path.join(folder, "Note")
         if os.path.isdir(note_dir):
             scan_dirs.append(note_dir)
@@ -430,7 +477,7 @@ def check_concept_paper_backlinks():
     without_backlink = 0
     missing_examples = []
 
-    for domain, folder in sorted(OV_FOLDERS.items()):
+    for domain, folder in sorted(DOMAIN_FOLDERS.items()):
         note_dir = os.path.join(folder, "Note")
         for fpath in _list_md_files(note_dir):
             links = _extract_wikilinks(fpath)

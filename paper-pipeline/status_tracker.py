@@ -1,5 +1,5 @@
 """
-Parse and update OV-Papers/PDF_status.md tracking table.
+Parse and update Papers/PDF_status.md tracking table.
 
 Usage:
     python status_tracker.py              # Print summary

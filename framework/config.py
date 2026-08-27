@@ -3,13 +3,13 @@ Configuration loader for obsidian-kb-framework.
 
 Reads vault_config.yaml from the vault root directory.
 All other scripts import from this module — the public interface
-(OV_FOLDERS, DOMAIN_MAP, SECTION_MARKERS, etc.) is unchanged.
+(DOMAIN_FOLDERS, DOMAIN_MAP, SECTION_MARKERS, etc.) is unchanged.
 """
 import os
 import sys
 
 # ── Locate vault root ─────────────────────────────────────────
-# The framework/ directory sits inside OV-Papers/scripts/ (installed vault)
+# The framework/ directory sits inside Papers/scripts/ (installed vault)
 # or directly under the framework repo. Walk up until we find vault_config.yaml.
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -20,7 +20,7 @@ def _find_vault_root():
         if os.path.isfile(os.path.join(d, "vault_config.yaml")):
             return d
         d = os.path.dirname(d)
-    # Fallback: assume parent of parent (original OV-Papers/scripts layout)
+    # Fallback: assume parent of parent (original Papers/scripts layout)
     return os.path.normpath(os.path.join(_THIS_DIR, os.pardir, os.pardir))
 
 VAULT_ROOT = _find_vault_root()
@@ -54,8 +54,8 @@ def _cfg(key_path: str, default=None):
     return val
 
 
-# ── OV-Papers paths ──────────────────────────────────────────
-PAPERS_ROOT = os.path.join(VAULT_ROOT, "OV-Papers")
+# ── Papers paths ─────────────────────────────────────────────
+PAPERS_ROOT = os.path.join(VAULT_ROOT, "Papers")
 PDF_RAW_DIR = os.path.join(PAPERS_ROOT, "PDF-raw")
 PDF_MD_DIR = os.path.join(PAPERS_ROOT, "PDF-md")
 FINAL_MD_DIR = os.path.join(PAPERS_ROOT, "Final-md")
@@ -73,22 +73,32 @@ CANDIDATES_REVIEW_FILE = os.path.join(PAPERS_ROOT, "candidates_review.md")
 LINK_REPORT_FILE = os.path.join(PAPERS_ROOT, "link_report.md")
 
 # ── Domain folders (from YAML or fallback) ────────────────────
-def _build_ov_folders():
+def _build_domain_folders():
     domains = _cfg("domains", {})
     if domains:
         return {
-            f"OV-{name}": os.path.join(VAULT_ROOT, f"OV-{name}")
+            name: os.path.join(VAULT_ROOT, name)
             for name in domains
         }
-    # Fallback: scan filesystem for OV-* directories
+    # Fallback: a top-level directory is a domain when it holds Map/ or Note/.
+    # Domain folders carry no name prefix, so structure is the only reliable
+    # signal; skip dotfolders so .obsidian and .git never look like domains.
     folders = {}
     if os.path.isdir(VAULT_ROOT):
-        for entry in os.listdir(VAULT_ROOT):
-            if entry.startswith("OV-") and os.path.isdir(os.path.join(VAULT_ROOT, entry)):
-                folders[entry] = os.path.join(VAULT_ROOT, entry)
+        for entry in sorted(os.listdir(VAULT_ROOT)):
+            if entry.startswith("."):
+                continue
+            path = os.path.join(VAULT_ROOT, entry)
+            if not os.path.isdir(path):
+                continue
+            if any(os.path.isdir(os.path.join(path, sub)) for sub in ("Map", "Note")):
+                folders[entry] = path
     return folders
 
-OV_FOLDERS = _build_ov_folders()
+DOMAIN_FOLDERS = _build_domain_folders()
+
+# Back-compat alias for callers written before the prefix was dropped.
+OV_FOLDERS = DOMAIN_FOLDERS
 
 # ── Domain routing map (from YAML or fallback) ────────────────
 def _build_domain_map():
@@ -97,11 +107,11 @@ def _build_domain_map():
     for name, info in domains.items():
         if isinstance(info, dict):
             for kw in info.get("keywords", []):
-                dmap[kw.lower()] = f"OV-{name}"
+                dmap[kw.lower()] = name
     return dmap
 
 DOMAIN_MAP = _build_domain_map()
-DEFAULT_DOMAIN = f"OV-{_cfg('default_domain', 'MachineLearning')}"
+DEFAULT_DOMAIN = _cfg('default_domain', 'MachineLearning')
 
 # ── Section markers ───────────────────────────────────────────
 SECTION_MARKERS = _cfg("section_markers", [
@@ -135,7 +145,7 @@ MIN_ALIAS_LENGTH = _filt.get("min_alias_length", 12) if isinstance(_filt, dict) 
 
 # ── Link injection settings ───────────────────────────────────
 _link = _cfg("link_injection", {})
-SCAN_DIRS = _link.get("scan_dirs", ["OV-Papers/PDF-md"]) if isinstance(_link, dict) else ["OV-Papers/PDF-md"]
+SCAN_DIRS = _link.get("scan_dirs", ["Papers/PDF-md"]) if isinstance(_link, dict) else ["Papers/PDF-md"]
 
 # ── Enrichment settings ───────────────────────────────────────
 _enrich = _cfg("enrichment", {})

@@ -1,6 +1,6 @@
 ---
 type: convention
-rule_id: KB-RESEARCH-002
+rule_id: KB-PRECISION-001
 scope: [research-writing]
 applies_to: [research-agents]
 triggers: [citation, terminology, prior-work]

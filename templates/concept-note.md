@@ -1,6 +1,6 @@
 ---
 created: YYYY-MM-DD
-domain: OV-Domain
+domain: Domain
 aliases:
   - 別名
 ---

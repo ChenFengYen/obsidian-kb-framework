@@ -15,11 +15,11 @@ v2 只保留診斷、圖譜與附件治理工具。所有工具預設提供資�
 ## 常用命令
 
 ```bash
-python OV-Papers/scripts/vault_health.py --summary
-python OV-Papers/scripts/vault_health.py --broken-links
-python OV-Papers/scripts/vault_health.py --orphans
-python OV-Papers/scripts/note_graph.py
-python OV-Papers/scripts/audit_images.py
+python Papers/scripts/vault_health.py --summary
+python Papers/scripts/vault_health.py --broken-links
+python Papers/scripts/vault_health.py --orphans
+python Papers/scripts/note_graph.py
+python Papers/scripts/audit_images.py
 ```
 
 ## 可選論文工具

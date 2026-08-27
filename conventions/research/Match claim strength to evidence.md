@@ -1,6 +1,6 @@
 ---
 type: convention
-rule_id: KB-RESEARCH-001
+rule_id: KB-EVIDENCE-005
 scope: [research-writing]
 applies_to: [research-agents]
 triggers: [claim, mechanism, comparison, literature]

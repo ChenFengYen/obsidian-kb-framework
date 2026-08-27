@@ -9,6 +9,6 @@ disable-model-invocation: true
 2. Search the vault for overlapping domains, MOCs, and terminology.
 3. Propose a domain name, description, initial MOC relationships, and optional routing keywords.
 4. Explain how the proposal fits the existing knowledge map.
-5. After approval, update `vault_config.yaml`, create `OV-{Domain}/Map`, `Note`, and `Pic`, add a narrative MOC, and link it from `Home.md`.
+5. After approval, update `vault_config.yaml`, create `{Domain}/Map`, `Note`, and `Pic`, add a narrative MOC, and link it from `Home.md`.
 
 Do not create a domain only because a source uses a new keyword. Avoid rigid taxonomies and do not create placeholder concept notes during initialization.

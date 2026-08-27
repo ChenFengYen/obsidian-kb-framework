@@ -76,11 +76,11 @@ your-vault/
 ├── CLAUDE.md                 # Claude adapter
 ├── GEMINI.md                 # Gemini adapter
 ├── .claude/skills/
-├── OV-Domain/
+├── Domain/
 │   ├── Map/
 │   ├── Note/
 │   └── Pic/
-└── OV-Papers/
+└── Papers/
     ├── PDF-raw/
     ├── PDF-md/
     ├── Final-md/

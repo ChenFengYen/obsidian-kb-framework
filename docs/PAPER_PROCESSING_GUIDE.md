@@ -1,6 +1,6 @@
 # Paper processing module
 
-This optional module stores source PDFs, structured source notes, and extracted assets under `OV-Papers`.
+This optional module stores source PDFs, structured source notes, and extracted assets under `Papers`.
 
 ## Principles
 
@@ -15,7 +15,7 @@ This optional module stores source PDFs, structured source notes, and extracted 
 ## Suggested layout
 
 ```text
-OV-Papers/
+Papers/
   PDF-raw/       source files
   PDF-md/        structured source notes
   PDF-assets/    extracted figures and tables

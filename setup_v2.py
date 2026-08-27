@@ -100,7 +100,7 @@ def render_agents(cfg):
     if 'windows-zh-tw' in packs:
         routes.append('- Windows text work: load the encoding convention before editing files.')
     if modules['paper_pipeline']:
-        routes.append('- Paper processing: read `OV-Papers/PAPER_PROCESSING_GUIDE.md` first.')
+        routes.append('- Paper processing: read `Papers/PAPER_PROCESSING_GUIDE.md` first.')
     if modules['zotero']:
         routes.append('- Zotero work: inspect command help before changing the library.')
     lines = [
@@ -114,6 +114,35 @@ def render_agents(cfg):
         '2. Read `vault_config.yaml`.',
         '3. Read the Convention MOC and only task-relevant conventions.',
         '4. Read `Home.md`, the relevant domain MOC, and task notes.',
+        '5. If the agent platform has a memory store for this vault, read it last.',
+        '   Memory records past decisions; it never overrides this file.',
+        '',
+        '## Memory fallback',
+        '',
+        'Agents differ in whether they can read a persistent memory store. When it',
+        'is unavailable - a different agent, a sandbox, a fresh machine - the',
+        'session still proceeds, but it must not pretend to remember:',
+        '',
+        '- Keep answering questions and running read-only diagnostics as normal.',
+        '- Never assert active projects, user preferences, or prior progress from',
+        '  inference. Not knowing is a reportable state, not a gap to fill in.',
+        '- Rebuild context from what is in the vault: `Home.md`, the domain MOC,',
+        '  project and worklog notes, and version control history.',
+        '- Say plainly that memory did not load and name what stays unverified.',
+        '- Before continuing prior work, changing a rule, or recording a decision,',
+        '  ask the user to confirm the state instead of guessing it.',
+        '',
+        '## Instruction precedence',
+        '',
+        'Within the agent platform\'s own system and safety policy, apply in order:',
+        '',
+        '1. The user\'s explicit instruction this session.',
+        '2. `AGENTS.md`.',
+        '3. The skill or guide covering the current task.',
+        '4. Enabled Convention notes.',
+        '5. Memory: past project state and reusable feedback.',
+        '',
+        'On conflict, do not guess. State the conflict and which rule you will follow.',
         '',
         '## Trust boundary',
         '',
@@ -141,6 +170,22 @@ def render_agents(cfg):
         '',
     ]
     lines.extend(routes)
+    lines.extend([
+        '',
+        '## Startup self-check',
+        '',
+        'Before the first reply, confirm briefly what actually loaded:',
+        '',
+        '```text',
+        'Agent: <name / model, if known>',
+        'cwd: <working directory>',
+        'Loaded: AGENTS / conventions / memory (or memory unavailable)',
+        'Capabilities: read / write / shell / network',
+        'Mode: read-only investigation | proposal-first change',
+        '```',
+        '',
+        'Report load state, limits, and the goal for this session. Do not restate the rules.',
+    ])
     lines.extend(['', '## Configured profile', ''])
     lines.extend(profile_lines(cfg))
     lines.extend(['', '## Enabled convention packs', ''])
@@ -169,8 +214,28 @@ def render_moc(name, description):
     return '\n'.join(lines)
 
 
+def write_registry(cfg, destination):
+    '''Install the rule_id registry alongside the Conventions.
+
+    The generated vault gets every id, so a new rule can never reuse a number
+    that already means something upstream. Ids whose pack was not installed are
+    downgraded to `reserved`: the number stays claimed, but the validator does
+    not demand a note that this vault deliberately does not have.
+    '''
+    source = ROOT / 'conventions' / 'registry.yaml'
+    if not source.is_file():
+        return
+    data = yaml.safe_load(source.read_text(encoding='utf-8')) or {}
+    packs = set(cfg['conventions']['packs'])
+    for rule in data.get('rules') or []:
+        if rule.get('status') == 'shipped' and rule.get('pack') not in packs:
+            rule['status'] = 'reserved'
+            rule.pop('pack', None)
+    write_yaml(data, destination / 'registry.yaml')
+
+
 def install_conventions(cfg, target):
-    destination = target / 'OV-KnowledgeBase' / 'Convention'
+    destination = target / 'KnowledgeBase' / 'Convention'
     destination.mkdir(parents=True, exist_ok=True)
     installed = []
     for pack in cfg['conventions']['packs']:
@@ -178,7 +243,8 @@ def install_conventions(cfg, target):
         for path in sorted(source.glob('*.md')):
             shutil.copy2(path, destination / path.name)
             installed.append(path.stem)
-    moc = target / 'OV-KnowledgeBase' / 'Map' / 'Knowledge Base Conventions.md'
+    write_registry(cfg, destination)
+    moc = target / 'KnowledgeBase' / 'Map' / 'Knowledge Base Conventions.md'
     moc.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         '# Knowledge Base Conventions', '',
@@ -188,19 +254,50 @@ def install_conventions(cfg, target):
     ]
     lines.extend('- [[' + name + ']]' for name in installed)
     lines.extend([
-        '', '## Maintenance', '',
-        'Classify feedback as an existing-rule case, rule change, tool bug, preference, or domain knowledge.', '',
+        '', '## Rule numbering', '',
+        '`registry.yaml` in this folder owns every `KB-*` id. It is YAML rather than a',
+        'table because it is executed, not just read:', '',
+        '```bash',
+        'python tools/validate_conventions.py --root KnowledgeBase/Convention',
+        'python tools/validate_conventions.py --root KnowledgeBase/Convention --list',
+        '```', '',
+        'The check fails both ways: an unregistered `rule_id`, and a registered id',
+        'marked `shipped` that no note claims. `--list` prints the whole table on',
+        'demand, so no second copy has to be kept in sync by hand.', '',
+        '- `shipped` - the note exists in this vault.',
+        '- `reserved` - the number is taken upstream; the rule was not made portable.',
+        '  The meaning of a number outlives the file, so nothing may reuse it.', '',
+        'Domain rules that only hold inside one field keep their own prefix, declared',
+        'under `reserved_prefixes`. The test for promoting one to a `KB-*` rule is',
+        'whether it still holds in a different domain.', '',
+        '## Maintenance', '',
+        'Classify feedback as an existing-rule case, rule change, tool bug, preference, or domain knowledge.',
+        'A rule that earns a second id is worse than a rule with none: search stops finding it.', '',
     ])
     moc.write_text('\n'.join(lines), encoding='utf-8')
 
 
+FALLBACK_ADAPTER = '# Agent Adapter\n\nRead and follow `AGENTS.md` before doing any work.\n'
+ADAPTER_FILES = {'claude': 'CLAUDE.md', 'gemini': 'GEMINI.md', 'legacy': 'AgentRules.md'}
+
+
 def install_adapters(cfg, target):
-    content = '# Agent Adapter\n\nRead and follow `AGENTS.md` before doing any work.\n'
-    mapping = {'claude': 'CLAUDE.md', 'gemini': 'GEMINI.md', 'legacy': 'AgentRules.md'}
+    '''Write one thin per-agent file pointing at AGENTS.md.
+
+    No single filename is read by every agent. Codex, Cursor, and Aider read
+    `AGENTS.md` from the vault root on their own, so they need no adapter here.
+    Claude Code reads `CLAUDE.md` and Gemini CLI reads `GEMINI.md`, so each gets
+    a file whose only job is to load `AGENTS.md` and add platform-specific notes.
+    Rules live in `AGENTS.md` alone; an adapter that starts holding rules of its
+    own has become a second source of truth.
+    '''
     for adapter in cfg['agent']['adapters']:
-        filename = mapping.get(adapter)
-        if filename:
-            (target / filename).write_text(content, encoding='utf-8')
+        filename = ADAPTER_FILES.get(adapter)
+        if not filename:
+            continue
+        source = ROOT / 'prompts' / filename
+        content = source.read_text(encoding='utf-8') if source.is_file() else FALLBACK_ADAPTER
+        (target / filename).write_text(content, encoding='utf-8')
 
 
 def create_vault(raw_config, target_dir):
@@ -208,7 +305,7 @@ def create_vault(raw_config, target_dir):
     target = Path(target_dir).resolve()
     target.mkdir(parents=True, exist_ok=True)
     for name, info in cfg['domains'].items():
-        domain_root = target / ('OV-' + name)
+        domain_root = target / name
         for subdir in ('Map', 'Note', 'Pic'):
             (domain_root / subdir).mkdir(parents=True, exist_ok=True)
         moc = domain_root / 'Map' / (name + '_MOC.md')
@@ -223,16 +320,16 @@ def create_vault(raw_config, target_dir):
     copy_skills(target / '.claude' / 'skills', CORE_SKILLS)
     modules = cfg['modules']
     if modules['paper_pipeline'] or modules['zotero']:
-        papers = target / 'OV-Papers'
+        papers = target / 'Papers'
         for subdir in ('PDF-md', 'PDF-raw', 'PDF-assets', 'Final-md', 'Template'):
             (papers / subdir).mkdir(parents=True, exist_ok=True)
     if modules['paper_pipeline']:
-        scripts = target / 'OV-Papers' / 'scripts'
+        scripts = target / 'Papers' / 'scripts'
         copy_files(ROOT / 'framework', scripts, ('config.py',))
         paper_scripts = tuple(path.name for path in (ROOT / 'paper-pipeline').glob('*.py'))
         copy_files(ROOT / 'paper-pipeline', scripts, paper_scripts)
         guide = ROOT / 'docs' / 'PAPER_PROCESSING_GUIDE.md'
-        shutil.copy2(guide, target / 'OV-Papers' / guide.name)
+        shutil.copy2(guide, target / 'Papers' / guide.name)
     if modules['zotero']:
         shutil.copytree(ROOT / 'zotero-tools', target / 'zotero-tools', dirs_exist_ok=True)
     ignore = '__pycache__/\n*.pyc\n.obsidian/workspace*.json\n'
