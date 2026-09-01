@@ -11,7 +11,21 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import setup_v2
-from framework.validate_conventions import render_table, validate
+from framework.validate_conventions import parse_registry, validate
+
+REGISTRY = ROOT / 'conventions' / 'registry.md'
+
+
+def mutated_tree(tmp, mutate):
+    '''Copy the Convention tree with one edit applied to the registry.'''
+    tree = Path(tmp) / 'conventions'
+    shutil.copytree(ROOT / 'conventions', tree)
+    target = tree / 'registry.md'
+    text = target.read_text(encoding='utf-8')
+    changed = mutate(text)
+    assert changed != text, 'the mutation did not change the registry'
+    target.write_text(changed, encoding='utf-8')
+    return tree
 
 
 def all_text(root):
@@ -118,7 +132,7 @@ class RegistryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             shutil.copytree(ROOT / 'conventions' / 'core', root / 'core')
-            shutil.copy2(ROOT / 'conventions' / 'registry.yaml', root / 'core' / 'registry.yaml')
+            shutil.copy2(REGISTRY, root / 'core' / 'registry.md')
             errors = [str(e) for e in validate(root / 'core')]
             self.assertFalse([e for e in errors if 'marked shipped' in e], errors)
             strict = [str(e) for e in validate(root / 'core', strict=True)]
@@ -143,13 +157,31 @@ class RegistryTests(unittest.TestCase):
             target = Path(tmp) / 'partial'
             setup_v2.create_vault(cfg, target)
             conventions = target / 'KnowledgeBase' / 'Convention'
-            self.assertTrue((conventions / 'registry.yaml').is_file())
-            self.assertEqual(validate(conventions), [])
-            data = yaml.safe_load((conventions / 'registry.yaml').read_text(encoding='utf-8'))
-            shipped = {r['id'] for r in data['rules'] if r.get('status') == 'shipped'}
+            self.assertTrue((conventions / 'registry.md').is_file())
+            self.assertEqual(validate(conventions, strict=True), [])
+            rules, _, errors = parse_registry(conventions / 'registry.md')
+            self.assertEqual(errors, [])
+            shipped = {i for i, r in rules.items() if r['status'] == 'shipped'}
             self.assertIn('KB-EVIDENCE-001', shipped)      # core, installed
             self.assertNotIn('KB-LINK-001', shipped)       # obsidian, not installed
-            self.assertIn('KB-LINK-001', {r['id'] for r in data['rules']})
+            self.assertIn('KB-LINK-001', rules)
+            # A downgraded rule must lose its link too: a vault that does not
+            # install the note must not carry a link that resolves to nothing.
+            self.assertIsNone(rules['KB-LINK-001']['linked'])
+            self.assertIsNotNone(rules['KB-EVIDENCE-001']['linked'])
+
+    def test_generated_registry_keeps_its_explanation(self):
+        # The prose above the table is the only place the numbering is
+        # explained to whoever opens the vault. Rewriting the file from parsed
+        # values would drop it without failing anything.
+        cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / 'prose'
+            setup_v2.create_vault(cfg, target)
+            text = (target / 'KnowledgeBase' / 'Convention' / 'registry.md').read_text(
+                encoding='utf-8')
+            self.assertIn('type: registry', text)
+            self.assertIn('never renumber an existing entry', text)
 
 
     def test_bom_prefixed_convention_is_still_validated(self):
@@ -165,12 +197,61 @@ class RegistryTests(unittest.TestCase):
             # The BOM must not hide the file from field validation.
             self.assertFalse([e for e in errors if 'missing YAML frontmatter' in e], errors)
 
-    def test_registry_table_renders_every_rule(self):
-        table = render_table(ROOT / 'conventions' / 'registry.yaml')
-        data = yaml.safe_load((ROOT / 'conventions' / 'registry.yaml').read_text(encoding='utf-8'))
-        for rule in data['rules']:
-            self.assertIn(rule['id'], table)
-        self.assertIn('PHENO-', table)
+    def test_registry_parses_every_row(self):
+        rules, prefixes, errors = parse_registry(REGISTRY)
+        self.assertEqual(errors, [])
+        self.assertIn('PHENO-', prefixes)
+        # Every row the file lists must survive parsing. A parser that drops
+        # rows reports a clean run on an incomplete registry.
+        listed = REGISTRY.read_text(encoding='utf-8').count('\n| `KB-')
+        self.assertEqual(len(rules), listed)
+        for entry in rules.values():
+            self.assertIn(entry['status'], {'shipped', 'reserved'})
+
+    def test_registry_is_not_validated_as_a_convention(self):
+        # It sits among the Convention notes and has no rule_id of its own.
+        errors = [str(e) for e in validate(ROOT / 'conventions')]
+        self.assertFalse([e for e in errors if 'registry.md' in e], errors)
+
+    def test_malformed_registry_rows_are_rejected(self):
+        # Each mutation is a way the table can rot. A Markdown table has no
+        # schema, so every one of these has to be caught by hand or the
+        # registry can silently mean less than it says.
+        cases = {
+            'short row': lambda t: t.replace(
+                '| 變更提交前核准 | shipped | core | — |', '| shipped | core | — |'),
+            'duplicate id': lambda t: t.replace('| `KB-COLLAB-001` |', '| `KB-CHANGE-001` |', 1),
+            'unknown status': lambda t: t.replace(
+                '| 變更提交前核准 | shipped |', '| 變更提交前核准 | draft |'),
+            'malformed id': lambda t: t.replace('| `KB-CHANGE-001` |', '| `KB-CHANGE-1` |'),
+            'two links in one row': lambda t: t.replace(
+                '| 變更提交前核准 | shipped |', '| [[變更提交前核准]] | shipped |'),
+            'no rule table': lambda t: t.replace('| rule_id |', '| ruleid |'),
+        }
+        for label, mutate in cases.items():
+            with self.subTest(label):
+                with tempfile.TemporaryDirectory() as tmp:
+                    errors = validate(mutated_tree(tmp, mutate), strict=True)
+                    self.assertTrue(errors, label)
+
+    def test_registry_links_must_match_the_notes(self):
+        cases = {
+            'shipped rule left unlinked': lambda t: t.replace(
+                '[[Approval before destructive or published changes]]',
+                'Approval before destructive or published changes'),
+            'link with no note behind it': lambda t: t.replace(
+                '| Literature search completeness |', '| [[Literature search completeness]] |'),
+            'link points at another note': lambda t: t.replace(
+                '[[Approval before destructive or published changes]]', '[[Some other note]]'),
+        }
+        for label, mutate in cases.items():
+            with self.subTest(label):
+                with tempfile.TemporaryDirectory() as tmp:
+                    tree = mutated_tree(tmp, mutate)
+                    # Link drift is a property of this tree, so it is opt-in:
+                    # a subset of the packs would report every absent note.
+                    self.assertEqual(validate(tree), [], label)
+                    self.assertTrue(validate(tree, strict=True), label)
 
     def test_adapters_carry_the_agents_import(self):
         cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))

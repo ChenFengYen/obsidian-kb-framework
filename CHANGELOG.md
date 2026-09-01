@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.2.0 - 2026-09-01
+
+### Changed
+
+- **編號登記表從 YAML 改為 Markdown 表格**（breaking）：`conventions/registry.yaml` → `conventions/registry.md`，產生的 vault 同步改為 `KnowledgeBase/Convention/registry.md`。理由是這份資料是零巢狀平表，YAML 的巢狀與載入期型別檢查都沒用到；改成表格後它在自己治理的 vault 裡讀得到，規約名稱還能當 wikilink 進反向連結與 graph。表格本身即權威，庫裡仍然只有一份。
+- registry 不再靠檔名尋找，改用 frontmatter `type: registry`。編號讓規約脫離檔名，登記表沒有理由反過來綁死在檔名上——vault 端與 repo 端也因此可以各自取名。
+- `--strict-registry` 新增**連結檢查**：規約名稱加了 `[[ ]]` 卻沒有對應筆記、有筆記卻沒加連結、連結指到別的檔案，三種都失敗。沒有這道檢查，中括號就會變成一份要靠人記得更新的「這則筆記存在嗎」複本。
+- `write_registry()` 在降級 `shipped` → `reserved` 的同時移除該列連結，並改為只重寫受影響的列，保留表格上方解釋編號體系的正文。
+- 產生的 Convention MOC 改寫〈Rule numbering〉並新增〈Working with these rules〉：規約要讀原文而非只看 MOC 清單、以 `rule_id` 而非標題引用、新增規約必須「筆記與登記列同一次改動」、改完要跑 validator 並回報結果。
+- 文件中的驗證指令不再寫死執行環境，改為說明唯一依賴是 PyYAML；`ModuleNotFoundError: No module named 'yaml'` 是直譯器選錯，不是規約庫壞了。
+
+### Removed
+
+- `validate_conventions.py --list` 與 `render_table()`。它們存在的理由是「可讀視圖即時產生、不存第二份」，權威改成 Markdown 後這個理由消失，留著反而會變成真正的第二份。
+
+### Tests
+
+- 迴歸測試 15 → 19：新增 registry 逐列解析、registry 不被當成 Convention 驗證、六種畸形列（缺欄、重複編號、未知 status、編號格式錯、一列兩個連結、整張表不見）、三種連結漂移，以及產生的 vault 必須保留表格正文。
+
 ## 2.1.0 - 2026-08-27
 
 ### Added

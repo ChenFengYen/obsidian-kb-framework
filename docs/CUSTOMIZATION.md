@@ -11,7 +11,7 @@ Select only applicable packs in `vault_config.yaml`. Add a new pack when a rule 
 Every Convention requires:
 
 - `type: convention`
-- a stable `rule_id`, registered in `conventions/registry.yaml`
+- a stable `rule_id`, registered in `conventions/registry.md`
 - list-valued `scope`, `applies_to`, and `triggers`
 - `enforcement`, `severity`, and `status`
 
@@ -19,16 +19,28 @@ Write `triggers` as actions or materials, not topics. An agent needs the rule
 when it is about to do something, not while it is thinking about a subject.
 
 Run `python framework/validate_conventions.py --root conventions --strict-registry`
-after changes, and `--list` to print the registry as a Markdown table. Drop
-`--strict-registry` when validating a subset such as one domain folder: the
-reverse check expects every `shipped` id to be present.
+after changes. Drop `--strict-registry` when validating a subset such as one
+domain folder: the reverse checks expect every `shipped` id to be present.
 
 ## Rule ids
 
-`conventions/registry.yaml` is the only authority for the `KB-*` namespace.
-Append to `rules`; never renumber an existing entry. An id stays claimed after
-its Convention is superseded, because the number means something to anyone who
-read it before.
+`conventions/registry.md` is the only authority for the `KB-*` namespace.
+Append a row; never renumber an existing entry. An id stays claimed after its
+Convention is superseded, because the number means something to anyone who read
+it before.
+
+The registry is a Markdown table rather than YAML because its payload is a flat
+row of scalars — the nesting and load-time type checking a YAML file buys were
+never used, while a table is readable in the vault it governs and its rule names
+are links that show up in backlinks and the graph. The table is the authority,
+not a rendering of one; nothing is stored twice.
+
+A name wrapped in `[[ ]]` is the note that claims the id in that tree. Those
+brackets are not maintained by hand: `--strict-registry` fails when a linked
+name has no note, when a note has no link, or when a link names a different file
+than the one carrying the id. Without that check the brackets would be a second
+copy of "does this note exist", which is the drift the registry exists to
+prevent.
 
 `status: shipped` means the note is in this repository. `status: reserved` means
 an upstream vault holds the number and the rule has not been made portable —

@@ -67,9 +67,20 @@ v1 與 v2.0 產生的領域目錄叫 `OV-Pheno`、`OV-Papers`；v2.1 起直接�
 
 ## 規約編號登記表
 
-`conventions/registry.yaml` 是 `KB-*` 編號的唯一權威。`validate_conventions.py` 會擋下未登記的 `rule_id`，也會擋下登記為 `shipped` 卻找不到筆記的編號。
+`conventions/registry.md` 是 `KB-*` 編號的唯一權威。`validate_conventions.py` 會擋下未登記的 `rule_id`，也會擋下登記為 `shipped` 卻找不到筆記的編號，以及 `[[ ]]` 連結與實際筆記對不上的列。
 
-下游 vault 的領域規約用自己的前綴（registry 的 `reserved_prefixes` 宣告，例如 `PHENO-`、`ML-`），內容不進本 repo，但編號空間保證不撞。
+它是 Markdown 表格而非 YAML：這份資料是零巢狀的平表，YAML 的巢狀與載入期型別檢查都用不到，而表格在它所治理的 vault 裡讀得到、規約名稱還是能產生反向連結的 wikilink。表格本身就是權威，不是某份權威的渲染結果，庫裡不存第二份。
+
+下游 vault 的領域規約用自己的前綴（registry 的〈Reserved prefixes〉表宣告，例如 `PHENO-`、`ML-`），內容不進本 repo，但編號空間保證不撞。
+
+**從 2.1.x 升上來**：`conventions/registry.yaml` 已移除。若你手改過那份 YAML，先取出被刪版本再比對：
+
+```bash
+git log --diff-filter=D --format=%H -1 -- conventions/registry.yaml
+git show <那個 commit>^:conventions/registry.yaml
+```
+
+欄位對應是 `id`→`rule_id`，`name`／`name_zh`／`status`／`pack` 同名，`former_ids` 改為逗號分隔；把你多加的列補進 `registry.md` 的〈Rules〉表，並依該列在你這棵樹裡有沒有筆記決定要不要加 `[[ ]]`。改完跑 `--strict-registry` 確認，連結對不上會直接失敗。
 
 ## v2 完成判準
 

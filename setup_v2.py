@@ -2,11 +2,15 @@
 
 import argparse
 import shutil
+import sys
 from pathlib import Path
 
 import yaml
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))
+
+from framework.validate_conventions import parse_registry  # noqa: E402
 CORE_SKILLS = ('init-domain', 'review-vault', 'suggest-next', 'debrief')
 VALID_PACKS = {'core', 'obsidian', 'research', 'windows-zh-tw'}
 CORE_SCRIPTS = (
@@ -214,24 +218,55 @@ def render_moc(name, description):
     return '\n'.join(lines)
 
 
+def registry_row(entry, linked=None):
+    '''Render one registry row. `linked` is the name to wrap in [[ ]], if any.'''
+    cells = []
+    for column in ('name', 'name_zh'):
+        value = entry.get(column) or ''
+        if value and value == linked:
+            value = '[[' + value + ']]'
+        cells.append(value or '—')
+    former = ', '.join('`' + old + '`' for old in entry.get('former_ids') or [])
+    return '| `{id}` | {name} | {name_zh} | {status} | {pack} | {former} |'.format(
+        id=entry['rule_id'],
+        name=cells[0],
+        name_zh=cells[1],
+        status=entry['status'],
+        pack=entry.get('pack') or '—',
+        former=former or '—',
+    )
+
+
 def write_registry(cfg, destination):
     '''Install the rule_id registry alongside the Conventions.
 
     The generated vault gets every id, so a new rule can never reuse a number
     that already means something upstream. Ids whose pack was not installed are
     downgraded to `reserved`: the number stays claimed, but the validator does
-    not demand a note that this vault deliberately does not have.
+    not demand a note that this vault deliberately does not have. Their link is
+    dropped in the same edit - a link to a note this vault does not install is
+    the drift the registry exists to prevent, and `--strict-registry` fails on
+    it rather than leaving it to be noticed.
+
+    Only the affected rows are rewritten. The prose above the table explains the
+    numbering to whoever opens the vault, and regenerating the file from parsed
+    values would quietly drop it.
     '''
-    source = ROOT / 'conventions' / 'registry.yaml'
+    source = ROOT / 'conventions' / 'registry.md'
     if not source.is_file():
         return
-    data = yaml.safe_load(source.read_text(encoding='utf-8')) or {}
+    rules, _, errors = parse_registry(source)
+    if errors:
+        raise ValueError('source registry is invalid:\n' + '\n'.join(errors))
+
     packs = set(cfg['conventions']['packs'])
-    for rule in data.get('rules') or []:
-        if rule.get('status') == 'shipped' and rule.get('pack') not in packs:
-            rule['status'] = 'reserved'
-            rule.pop('pack', None)
-    write_yaml(data, destination / 'registry.yaml')
+    lines = source.read_text(encoding='utf-8').splitlines()
+    for entry in rules.values():
+        if entry['status'] != 'shipped' or entry['pack'] in packs:
+            continue
+        downgraded = dict(entry, status='reserved', pack='')
+        lines[entry['line'] - 1] = registry_row(downgraded)
+    (destination / 'registry.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
 
 def install_conventions(cfg, target):
@@ -255,21 +290,37 @@ def install_conventions(cfg, target):
     lines.extend('- [[' + name + ']]' for name in installed)
     lines.extend([
         '', '## Rule numbering', '',
-        '`registry.yaml` in this folder owns every `KB-*` id. It is YAML rather than a',
-        'table because it is executed, not just read:', '',
+        '[[registry]] in this folder owns every `KB-*` id. It is an ordinary note, so',
+        'open it to read the numbering - but it is also executed, and that is what keeps',
+        'it honest:', '',
         '```bash',
         'python tools/validate_conventions.py --root KnowledgeBase/Convention',
-        'python tools/validate_conventions.py --root KnowledgeBase/Convention --list',
+        'python tools/validate_conventions.py --root KnowledgeBase/Convention --strict-registry',
         '```', '',
-        'The check fails both ways: an unregistered `rule_id`, and a registered id',
-        'marked `shipped` that no note claims. `--list` prints the whole table on',
-        'demand, so no second copy has to be kept in sync by hand.', '',
-        '- `shipped` - the note exists in this vault.',
+        'The only dependency is PyYAML, which is not in the standard library, so which',
+        'interpreter can run this is a property of the machine, not of the vault.',
+        'Stopping at `ModuleNotFoundError: No module named \'yaml\'` means the wrong',
+        'interpreter, not a broken rule set - the error names `yaml`, not the cause.', '',
+        'The check fails in three directions: an unregistered `rule_id`, a registered id',
+        'marked `shipped` that no note claims, and a rule name whose `[[ ]]` link does not',
+        'match the note that claims the id. That third check is why the table can be the',
+        'authority: its links cannot drift away from the notes without failing.', '',
+        '- `shipped` - the note exists in this vault, and its name is linked.',
         '- `reserved` - the number is taken upstream; the rule was not made portable.',
         '  The meaning of a number outlives the file, so nothing may reuse it.', '',
-        'Domain rules that only hold inside one field keep their own prefix, declared',
-        'under `reserved_prefixes`. The test for promoting one to a `KB-*` rule is',
-        'whether it still holds in a different domain.', '',
+        'Domain rules that only hold inside one field keep their own prefix, listed under',
+        'reserved prefixes. The test for promoting one to a `KB-*` rule is whether it',
+        'still holds in a different domain.', '',
+        '## Working with these rules', '',
+        'For an agent maintaining this vault:', '',
+        '1. Read the Convention note itself before applying a rule. This MOC lists what',
+        '   exists; it does not carry the rationale, scope, or exceptions that decide',
+        '   whether a rule applies to the task in hand.',
+        '2. Cite rules by `rule_id`, never by title. Titles change; ids do not.',
+        '3. Adding a rule means a note *and* a registry row, in one change. A note with',
+        '   an unregistered id fails validation, and so does a row with no note.',
+        '4. Run the validator after any edit under this folder, and report the result.',
+        '   A rule set nobody checks is indistinguishable from one that passes.', '',
         '## Maintenance', '',
         'Classify feedback as an existing-rule case, rule change, tool bug, preference, or domain knowledge.',
         'A rule that earns a second id is worse than a rule with none: search stops finding it.', '',
