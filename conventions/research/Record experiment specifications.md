@@ -1,9 +1,14 @@
 ---
 type: convention
 rule_id: KB-EXPERIMENT-001
-scope: [experiment-provenance]
 applies_to: [research-agents]
-triggers: [experiment, benchmark, ablation, analysis-run]
+triggers:
+  - analysis-run
+  - verification
+keywords:
+  - experiment
+  - benchmark
+  - ablation
 enforcement: review
 severity: error
 status: active

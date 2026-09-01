@@ -1,9 +1,13 @@
 ---
 type: convention
 rule_id: KB-DATA-001
-scope: [data-processing]
 applies_to: [all-agents]
-triggers: [csv, yaml, json, structured-data]
+triggers:
+  - data-parse
+keywords:
+  - csv
+  - yaml
+  - json
 enforcement: review
 severity: error
 status: active

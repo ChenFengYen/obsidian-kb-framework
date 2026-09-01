@@ -159,7 +159,7 @@ class RegistryTests(unittest.TestCase):
             conventions = target / 'KnowledgeBase' / 'Convention'
             self.assertTrue((conventions / 'registry.md').is_file())
             self.assertEqual(validate(conventions, strict=True), [])
-            rules, _, errors = parse_registry(conventions / 'registry.md')
+            rules, _, _, errors = parse_registry(conventions / 'registry.md')
             self.assertEqual(errors, [])
             shipped = {i for i, r in rules.items() if r['status'] == 'shipped'}
             self.assertIn('KB-EVIDENCE-001', shipped)      # core, installed
@@ -198,7 +198,7 @@ class RegistryTests(unittest.TestCase):
             self.assertFalse([e for e in errors if 'missing YAML frontmatter' in e], errors)
 
     def test_registry_parses_every_row(self):
-        rules, prefixes, errors = parse_registry(REGISTRY)
+        rules, prefixes, _, errors = parse_registry(REGISTRY)
         self.assertEqual(errors, [])
         self.assertIn('PHENO-', prefixes)
         # Every row the file lists must survive parsing. A parser that drops
@@ -207,6 +207,55 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(len(rules), listed)
         for entry in rules.values():
             self.assertIn(entry['status'], {'shipped', 'reserved'})
+
+    def test_every_trigger_is_in_the_vocabulary(self):
+        _, _, vocabulary, errors = parse_registry(REGISTRY)
+        self.assertEqual(errors, [])
+        self.assertTrue(vocabulary)
+        self.assertEqual(sorted(vocabulary), sorted(set(vocabulary)))
+        used = set()
+        for path in (ROOT / 'conventions').rglob('*.md'):
+            text = path.read_text(encoding='utf-8-sig')
+            if not text.startswith('---'):
+                continue
+            fm = yaml.safe_load(text.split('---', 2)[1]) or {}
+            if fm.get('type') == 'convention':
+                used |= set(fm.get('triggers') or [])
+        self.assertEqual(used - set(vocabulary), set())
+
+    def test_trigger_outside_the_vocabulary_is_rejected(self):
+        # The whole point of closing the list is that closure is enforced.
+        # Each case is a way an open value creeps back: invented wording, a
+        # leftover from the pre-closure vocabulary, and a plain typo, which
+        # would otherwise become a term that no other rule can ever share.
+        victim = 'core/Approval before destructive or published changes.md'
+        cases = {
+            'invented': lambda t: t.replace('  - version-control', '  - git-stuff'),
+            'pre-closure leftover':
+                lambda t: t.replace('  - destructive-op', '  - breaking-change'),
+            'typo': lambda t: t.replace('  - version-control', '  - version-controls'),
+        }
+        for label, mutate in cases.items():
+            with self.subTest(label):
+                with tempfile.TemporaryDirectory() as tmp:
+                    tree = Path(tmp) / 'conventions'
+                    shutil.copytree(ROOT / 'conventions', tree)
+                    target = tree / victim
+                    target.write_text(mutate(target.read_text(encoding='utf-8')),
+                                      encoding='utf-8')
+                    errors = [str(e) for e in validate(tree)]
+                    self.assertTrue([e for e in errors if 'vocabulary' in e], errors)
+
+    def test_scope_is_no_longer_required(self):
+        # scope carried 51 distinct values across 51 rules, 75% of them used
+        # once: it duplicated triggers at worse quality and was dropped.
+        for path in (ROOT / 'conventions').rglob('*.md'):
+            text = path.read_text(encoding='utf-8-sig')
+            if not text.startswith('---'):
+                continue
+            fm = yaml.safe_load(text.split('---', 2)[1]) or {}
+            if fm.get('type') == 'convention':
+                self.assertNotIn('scope', fm, path.name)
 
     def test_registry_is_not_validated_as_a_convention(self):
         # It sits among the Convention notes and has no rule_id of its own.

@@ -1,9 +1,12 @@
 ---
 type: convention
 rule_id: KB-LINK-001
-scope: [vault-writing]
 applies_to: [all-agents]
-triggers: [wikilink, rename, link-repair]
+triggers:
+  - wikilink
+keywords:
+  - rename
+  - link-repair
 enforcement: lint
 severity: error
 status: active

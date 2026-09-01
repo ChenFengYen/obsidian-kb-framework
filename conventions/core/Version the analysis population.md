@@ -1,9 +1,16 @@
 ---
 type: convention
 rule_id: KB-DATA-002
-scope: [data-analysis, experiment-provenance]
 applies_to: [all-agents]
-triggers: [cohort, inclusion, exclusion, control, comparison]
+triggers:
+  - analysis-run
+  - verification
+keywords:
+  - cohort
+  - inclusion
+  - exclusion
+  - control
+  - comparison
 enforcement: review
 severity: error
 status: active

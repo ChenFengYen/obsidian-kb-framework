@@ -1,9 +1,14 @@
 ---
 type: convention
 rule_id: KB-OUTPUT-001
-scope: [vault-governance]
 applies_to: [all-agents]
-triggers: [generated-output, analysis-script, temporary-file]
+triggers:
+  - version-control
+  - kb-access
+keywords:
+  - generated-output
+  - analysis-script
+  - temporary-file
 enforcement: path-check
 severity: error
 status: active

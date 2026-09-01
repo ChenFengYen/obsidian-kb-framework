@@ -1,9 +1,15 @@
 ---
 type: convention
 rule_id: KB-DATA-003
-scope: [data-pipeline]
 applies_to: [all-agents]
-triggers: [file-discovery, derived-output, rerun, pipeline]
+triggers:
+  - data-archive
+  - data-parse
+keywords:
+  - file-discovery
+  - derived-output
+  - rerun
+  - pipeline
 enforcement: review
 severity: error
 status: active

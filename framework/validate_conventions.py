@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''Validate Convention frontmatter and rule identifiers.
 
-Three independent checks run over a Convention tree:
+Four independent checks run over a Convention tree:
 
 1. Frontmatter shape - every note carries the required fields with valid values.
 2. Registry agreement - every rule_id is listed in the registry, and every id
@@ -10,6 +10,11 @@ Three independent checks run over a Convention tree:
    but does not enumerate.
 3. Link agreement - a rule name the registry wraps in [[ ]] must be a note that
    exists in the tree, and every note must be linked from its row.
+4. Trigger vocabulary - every `triggers` value is a term the registry lists.
+   Triggers say when a rule should come to mind, so they are only useful if
+   several rules share a term; a value invented for one note can never be
+   filtered for. Specific wording that no term covers belongs under `keywords`,
+   an open field that is deliberately not a filter.
 
 The registry is a Markdown table, not YAML. Its payload is a flat row of
 scalars, so YAML's nesting and load-time type checking were never used, while a
@@ -29,7 +34,7 @@ from pathlib import Path
 import yaml
 
 REQUIRED = {
-    'type', 'rule_id', 'scope', 'applies_to', 'triggers',
+    'type', 'rule_id', 'applies_to', 'triggers',
     'enforcement', 'severity', 'status',
 }
 VALID_ENFORCEMENT = {'review', 'approval', 'lint', 'path-check'}
@@ -39,6 +44,8 @@ RULE_ID = re.compile(r'^[A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-\d{3}$')
 WIKILINK = re.compile(r'^\[\[(.+)\]\]$')
 RULE_COLUMNS = ['rule_id', 'name', 'name_zh', 'status', 'pack', 'former_ids']
 PREFIX_COLUMNS = ['prefix', 'owner']
+TRIGGER_COLUMNS = ['trigger', 'applies when']
+LIST_FIELDS = ('applies_to', 'triggers', 'keywords')
 EMPTY = {'', '—', '-'}
 # Documentation that lives beside the Conventions but is not one of them.
 NOT_A_CONVENTION = {'README.md'}
@@ -98,7 +105,7 @@ def _value(cell):
 
 
 def parse_registry(path):
-    '''Return (rules_by_id, reserved_prefixes, errors) from a Markdown registry.
+    '''Return (rules, reserved_prefixes, trigger_vocabulary, errors).
 
     Structural problems are errors rather than silently short rows. A table
     cell that vanished takes a whole field with it, and a registry that parses
@@ -106,7 +113,7 @@ def parse_registry(path):
     mode this file exists to prevent.
     '''
     text = Path(path).read_text(encoding='utf-8-sig')
-    rules, prefixes, errors = {}, [], []
+    rules, prefixes, triggers, errors = {}, [], [], []
     seen_rule_table = False
 
     for header, rows in _tables(text):
@@ -161,10 +168,42 @@ def parse_registry(path):
                 value, _ = _value(cells[0])
                 if value:
                     prefixes.append(value)
+        elif header[:1] == ['trigger']:
+            for line_no, cells in rows:
+                value, _ = _value(cells[0])
+                if not value:
+                    continue
+                if value in triggers:
+                    errors.append(f'{path}:{line_no}: duplicate trigger {value}')
+                    continue
+                triggers.append(value)
 
     if not seen_rule_table:
         errors.append(f'{path}: no rule table found (expected a | rule_id | ... | header)')
-    return rules, prefixes, errors
+    return rules, prefixes, triggers, errors
+
+
+def check_triggers(triggers_by_path, vocabulary, registry_path):
+    '''Every trigger a note declares must be a term the registry lists.
+
+    Open triggers are the failure this check exists for: a value invented for
+    one note can never be filtered for, so the field ends up looking like an
+    index while retrieving nothing. Closing it is only meaningful if something
+    enforces the closure, which is here.
+    '''
+    errors = []
+    if not vocabulary:
+        return errors
+    allowed = set(vocabulary)
+    for path, values in sorted(triggers_by_path.items(), key=lambda kv: str(kv[0])):
+        for value in values:
+            if value not in allowed:
+                errors.append(
+                    f'{path}: trigger {value!r} is not in the vocabulary in '
+                    f'{registry_path}; use an existing term, put the specific '
+                    'wording under `keywords`, or add the term deliberately'
+                )
+    return errors
 
 
 def check_registry(seen, registry_path, strict=False):
@@ -177,7 +216,7 @@ def check_registry(seen, registry_path, strict=False):
     that carries only some packs, and every absent id would look like an error,
     so they are opt-in.
     '''
-    rules, prefixes, errors = parse_registry(registry_path)
+    rules, prefixes, _, errors = parse_registry(registry_path)
     if not rules:
         errors.append(f'{registry_path}: registry lists no rules')
         return errors
@@ -223,6 +262,7 @@ def check_registry(seen, registry_path, strict=False):
 def validate(root, registry=None, strict=False):
     errors = []
     seen = {}
+    triggers_by_path = {}
     found_registries = []
     files = [
         path for path in sorted(Path(root).rglob('*.md'))
@@ -258,9 +298,11 @@ def validate(root, registry=None, strict=False):
         if data.get('severity') not in VALID_SEVERITY:
             value = data.get('severity')
             errors.append(f'{path}: invalid severity {value}')
-        for field in ('scope', 'applies_to', 'triggers'):
+        for field in LIST_FIELDS:
             if field in data and not isinstance(data[field], list):
                 errors.append(f'{path}: {field} must be a list')
+        if isinstance(data.get('triggers'), list):
+            triggers_by_path[path] = data['triggers']
 
     if registry:
         registry_path = Path(registry)
@@ -276,6 +318,8 @@ def validate(root, registry=None, strict=False):
 
     if registry_path is not None:
         errors.extend(check_registry(seen, registry_path, strict))
+        _, _, vocabulary, _ = parse_registry(registry_path)
+        errors.extend(check_triggers(triggers_by_path, vocabulary, registry_path))
     return errors
 
 

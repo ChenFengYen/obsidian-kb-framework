@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.3.0 - 2026-09-01
+
+### Changed
+
+- **`triggers` 改為封閉詞彙**（breaking）：22 個詞登記在 `conventions/registry.md` 的〈Trigger vocabulary〉表，validator 拒絕表外的值。理由是實測——上游 vault 的 51 則規約用了 **162 個相異 trigger，其中 151 個只用過一次（93%）**。只用過一次的詞永遠篩不出第二則，於是這個欄位看起來像索引，實際上撈不出東西。詞彙表與編號表放同一個檔，因為兩者是同一種東西：一開放就失去篩選能力的命名空間。
+- **新增開放欄位 `keywords`**：舊的具體用語（`impact-factor`、`cssclasses`、`gitignore-edit`）移到這裡，明文不作篩選用。散落的詞不必刪，它們只是被放錯位置——留著仍可全文搜尋，累積到足夠才升格為新的 trigger。
+- **移除 `scope` 必填**：51 則規約有 51 個相異 `scope` 值、75% 只用過一次，還有單複數分裂；它與 `triggers` 重疊但品質更差，`triggers` 封閉後沒有留下的理由。
+- 產生的 Convention MOC 的〈Working with these rules〉改為以 trigger 起手：先按手上的任務撈規約，再沿著規約之間的連結走。
+
+### Tests
+
+- 19 → 22：詞彙表逐項解析且無重複、樹內每個 trigger 都在表內、三種表外值（自創、封閉前的舊值、拼錯）都被擋下、`scope` 已從所有規約移除。
+
 ## 2.2.0 - 2026-09-01
 
 ### Changed

@@ -1,9 +1,15 @@
 ---
 type: convention
 rule_id: KB-ENCODING-001
-scope: [windows, text-processing]
 applies_to: [all-agents]
-triggers: [windows, utf-8, non-ascii, markdown-edit]
+triggers:
+  - cjk-text
+  - destructive-op
+keywords:
+  - windows
+  - utf-8
+  - non-ascii
+  - markdown-edit
 enforcement: lint
 severity: error
 status: active

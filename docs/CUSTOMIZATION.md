@@ -12,11 +12,25 @@ Every Convention requires:
 
 - `type: convention`
 - a stable `rule_id`, registered in `conventions/registry.md`
-- list-valued `scope`, `applies_to`, and `triggers`
+- list-valued `applies_to` and `triggers`
 - `enforcement`, `severity`, and `status`
 
 Write `triggers` as actions or materials, not topics. An agent needs the rule
 when it is about to do something, not while it is thinking about a subject.
+Every value must come from the trigger vocabulary in `conventions/registry.md`;
+the validator rejects anything else.
+
+That list is closed on purpose. Left open, each rule invents its own wording
+and nothing repeats — a value used once can never be filtered for, so the field
+ends up looking like an index while retrieving nothing. Measured on the
+upstream vault before closing it: 162 distinct trigger values across 51 rules,
+151 of them used exactly once.
+
+Specific wording that no term covers goes under `keywords`, an open list that
+is deliberately not a filter: it keeps the precise material (`impact-factor`,
+`cssclasses`, `gitignore-edit`) findable by full-text search without pretending
+to be a classification axis. Terms accumulate there until they justify a new
+entry in the vocabulary.
 
 Run `python framework/validate_conventions.py --root conventions --strict-registry`
 after changes. Drop `--strict-registry` when validating a subset such as one

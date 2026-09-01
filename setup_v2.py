@@ -255,7 +255,7 @@ def write_registry(cfg, destination):
     source = ROOT / 'conventions' / 'registry.md'
     if not source.is_file():
         return
-    rules, _, errors = parse_registry(source)
+    rules, _, _, errors = parse_registry(source)
     if errors:
         raise ValueError('source registry is invalid:\n' + '\n'.join(errors))
 
@@ -313,13 +313,19 @@ def install_conventions(cfg, target):
         'still holds in a different domain.', '',
         '## Working with these rules', '',
         'For an agent maintaining this vault:', '',
-        '1. Read the Convention note itself before applying a rule. This MOC lists what',
+        '1. Start from the work in hand, not the subject. Each rule declares `triggers`',
+        '   drawn from the closed vocabulary in [[registry]]; grep that term to pull the',
+        '   rules for the task you are about to do, then follow their links - a rule',
+        '   names its neighbours, and the neighbour is often the one that applies.',
+        '2. Read the Convention note itself before applying a rule. This MOC lists what',
         '   exists; it does not carry the rationale, scope, or exceptions that decide',
         '   whether a rule applies to the task in hand.',
-        '2. Cite rules by `rule_id`, never by title. Titles change; ids do not.',
-        '3. Adding a rule means a note *and* a registry row, in one change. A note with',
-        '   an unregistered id fails validation, and so does a row with no note.',
-        '4. Run the validator after any edit under this folder, and report the result.',
+        '3. Cite rules by `rule_id`, never by title. Titles change; ids do not.',
+        '4. Adding a rule means a note *and* a registry row, in one change. A note with',
+        '   an unregistered id fails validation, and so does a row with no note. A new',
+        '   trigger term is a separate, deliberate decision - put unmatched wording',
+        '   under `keywords` instead and let it accumulate.',
+        '5. Run the validator after any edit under this folder, and report the result.',
         '   A rule set nobody checks is indistinguishable from one that passes.', '',
         '## Maintenance', '',
         'Classify feedback as an existing-rule case, rule change, tool bug, preference, or domain knowledge.',

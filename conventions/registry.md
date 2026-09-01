@@ -86,3 +86,43 @@ deliberately absent here; this repository only reserves the namespace so generic
 | `KB-WRITING-001` | Notes teach, they do not log edits | 筆記不寫修改過程 | reserved | — | — |
 | `KB-WRITING-002` | Choose a narrative mode before enriching a note | 豐富筆記先選敘事模式 | reserved | — | — |
 | `KB-WRITING-003` | Callouts need an entry point in the body | callout須有正文入口 | reserved | — | — |
+
+## Trigger vocabulary
+
+`triggers` says **when a rule should come to mind** — the work in hand, not the
+subject being thought about. The list is closed for the same reason the id
+namespace is: a value invented for one rule can never be filtered for, so an
+open list of triggers is a field that looks like an index and retrieves
+nothing. `validate_conventions.py` rejects a trigger outside this table.
+
+Adding a term is a deliberate change, not a side effect of writing a rule. A
+term earns its place by covering several rules; one that covers a single rule
+filters nothing, and one that covers most of them filters nothing either. When
+a rule needs a value that is not here, record the specific words under
+`keywords` — an open field, deliberately not a filter — and let them accumulate
+until they justify a term.
+
+| trigger | applies when |
+|---|---|
+| `analysis-run` | running an analysis, experiment, or model evaluation |
+| `annotation` | labelling data or reviewing it object by object |
+| `cjk-text` | writing CJK prose, or editing text with inline markers |
+| `claim-writing` | writing a statement that carries evidential weight |
+| `data-archive` | naming archived data or designing its keys |
+| `data-classify` | designing a classification field, tag set, or vocabulary |
+| `data-parse` | reading or writing structured data |
+| `destructive-op` | deleting, batch-rewriting, or any irreversible edit |
+| `figure-or-table` | a figure or a table: ASCII, embeds, layout, asset naming |
+| `frontmatter` | editing YAML fields |
+| `kb-access` | operating on the knowledge base itself |
+| `literature-search` | searching outside the vault for sources |
+| `note-create` | creating a note: naming it, titling it, placing it |
+| `note-structure` | folders, moves, renames, MOCs |
+| `note-write` | writing or revising note prose |
+| `option-compare` | choosing between two or more candidates |
+| `paper-ingestion` | bringing a paper into the vault as structured notes |
+| `plotting` | producing a plot |
+| `task-scoping` | deciding what kind of task this is, or designing automation |
+| `verification` | producing a number that says the work is sound |
+| `version-control` | commit, push, ignore rules, renames under version control |
+| `wikilink` | editing links, including block links and link repair |

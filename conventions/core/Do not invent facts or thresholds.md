@@ -1,9 +1,14 @@
 ---
 type: convention
 rule_id: KB-EVIDENCE-001
-scope: [knowledge-writing]
 applies_to: [all-agents]
-triggers: [numeric-threshold, missing-fact, citation, metadata]
+triggers:
+  - claim-writing
+keywords:
+  - numeric-threshold
+  - missing-fact
+  - citation
+  - metadata
 enforcement: review
 severity: error
 status: active
