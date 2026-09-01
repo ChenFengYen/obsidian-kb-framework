@@ -62,7 +62,7 @@ deliberately absent here; this repository only reserves the namespace so generic
 | `KB-EXPERIMENT-001` | [[Record experiment specifications]] | 乾實驗環境規格 | shipped | research | — |
 | `KB-FRONTMATTER-001` | [[Frontmatter remains structured]] | Frontmatter清單格式 | shipped | obsidian | — |
 | `KB-FRONTMATTER-002` | Frontmatter field semantics | Frontmatter欄位語意 | reserved | — | — |
-| `KB-HISTORY-001` | Preserve large note and convention history | 大型筆記與規約歷程保留 | reserved | — | — |
+| `KB-HISTORY-001` | Preserve note and convention history | 筆記與規約歷程保留 | reserved | — | — |
 | `KB-LANG-001` | Traditional Chinese wording in notes | 繁體中文筆記用詞 | reserved | — | — |
 | `KB-LANG-002` | Space around inline markers in CJK text | 中文粗體前後加半形空格 | reserved | — | — |
 | `KB-LINK-001` | [[Obsidian link safety]] | Obsidian連結規約 | shipped | obsidian | — |
