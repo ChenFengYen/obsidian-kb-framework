@@ -29,6 +29,7 @@ tracks only its own Conventions can still run the frontmatter check alone.
 
 import argparse
 import re
+import sys
 from pathlib import Path
 
 import yaml
@@ -41,6 +42,10 @@ VALID_ENFORCEMENT = {'review', 'approval', 'lint', 'path-check'}
 VALID_SEVERITY = {'info', 'warning', 'error'}
 VALID_STATUS = {'shipped', 'reserved'}
 RULE_ID = re.compile(r'^[A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-\d{3}$')
+HEADLINE = re.compile(r'^#+[ \t]*(?:一句話版|In one line)[ \t]*\n+((?:[ \t]*>.*\n?)+)', re.M)
+# Longest real headline measured across the upstream vault's 51 rules is 162
+# characters; this leaves room without letting a paragraph pass as a headline.
+HEADLINE_MAX = 400
 WIKILINK = re.compile(r'^\[\[(.+)\]\]$')
 RULE_COLUMNS = ['rule_id', 'name', 'name_zh', 'status', 'pack', 'former_ids']
 PREFIX_COLUMNS = ['prefix', 'owner']
@@ -259,6 +264,81 @@ def check_registry(seen, registry_path, strict=False):
     return errors
 
 
+def headline(text):
+    '''Return the one-line version of a Convention, or None.
+
+    Two shapes count. A rich rule states it in a `一句話版` / `In one line`
+    section holding a blockquote, then elaborates. A rule whose entire body is
+    one short paragraph already is its one-line version, and demanding a
+    separate section there would mean writing the same sentence twice in a
+    four-line file - so the opening paragraph is taken instead.
+
+    The fallback is capped: past HEADLINE_MAX the paragraph is prose, not a
+    headline, and the rule is reported as missing one. Without the cap a long
+    rule silently contributes a wall of text to the index, which defeats the
+    only thing the index is for.
+    '''
+    match = HEADLINE.search(text)
+    if match:
+        lines = []
+        for line in match.group(1).splitlines():
+            stripped = line.strip()
+            if not stripped.startswith('>'):
+                break
+            lines.append(stripped.lstrip('>').strip())
+        joined = ' '.join(part for part in lines if part)
+        return ' '.join(joined.split()) or None
+
+    body = text.split('---', 2)[2] if text.startswith('---') else text
+    for block in body.split('\n\n'):
+        block = block.strip()
+        if not block or block.startswith(('#', '>', '|', '-', '*', '`')):
+            continue
+        collapsed = ' '.join(block.split())
+        return collapsed if len(collapsed) <= HEADLINE_MAX else None
+    return None
+
+
+def build_index(root):
+    '''Render every Convention as one line: id, triggers, name, headline.
+
+    The point is to make classification unnecessary. Reading all of them costs
+    a fraction of the full text (measured on the upstream vault: 6.7%), so an
+    agent does not have to decide in advance which rules its task needs - it
+    recognises the one that bites instead of recalling that it exists.
+
+    Generated on demand, never written to a file. A stored copy of every rule's
+    headline is a second thing to keep in sync with the rules, which is the
+    drift the registry exists to prevent.
+    '''
+    rows, missing = [], []
+    for path in sorted(Path(root).rglob('*.md')):
+        if path.name in NOT_A_CONVENTION:
+            continue
+        try:
+            text = path.read_text(encoding='utf-8-sig')
+            data = frontmatter(path)
+        except Exception:
+            continue
+        if data.get('type') != 'convention':
+            continue
+        line = headline(text)
+        if line is None:
+            missing.append(data.get('rule_id', path.stem))
+        triggers = data.get('triggers')
+        rows.append((
+            data.get('rule_id', '?'),
+            ' '.join(triggers) if isinstance(triggers, list) else '',
+            path.stem,
+            line or '(no one-line version)',
+        ))
+    out = ['%s [%s] %s — %s' % row for row in sorted(rows)]
+    if missing:
+        out.append('')
+        out.append('# missing a one-line version: ' + ', '.join(sorted(missing)))
+    return '\n'.join(out)
+
+
 def rules_for_trigger(root, term):
     '''List the Conventions that declare `term`, as (rule_id, path) pairs.
 
@@ -349,6 +429,13 @@ def validate(root, registry=None, strict=False):
 
 
 def main():
+    # Windows consoles default to a legacy codepage (cp950 here), and printing
+    # a CJK rule name then dies with UnicodeEncodeError - including when the
+    # output is redirected to a file. Set it on the stream rather than asking
+    # every caller to set an environment variable.
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', default='conventions')
     parser.add_argument(
@@ -369,7 +456,18 @@ def main():
         help='List the Conventions that declare TERM and exit. This is how an '
              'agent pulls the rules for the work it is about to do.',
     )
+    parser.add_argument(
+        '--index',
+        action='store_true',
+        help='Print every rule as one line - id, triggers, name, one-line '
+             'version - and exit. Cheap enough to read in full, so no task '
+             'has to be classified before the rules can be found.',
+    )
     args = parser.parse_args()
+
+    if args.index:
+        print(build_index(args.root))
+        return
 
     if args.for_trigger:
         found = rules_for_trigger(args.root, args.for_trigger)

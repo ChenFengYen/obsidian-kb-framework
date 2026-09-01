@@ -32,6 +32,33 @@ is deliberately not a filter: it keeps the precise material (`impact-factor`,
 to be a classification axis. Terms accumulate there until they justify a new
 entry in the vocabulary.
 
+## Finding the rules for a task
+
+Two ways in, and they answer different questions.
+
+```bash
+python framework/validate_conventions.py --root conventions --index
+python framework/validate_conventions.py --root conventions --for-trigger note-write
+```
+
+`--index` prints every rule as one line — id, triggers, name, one-line version.
+It exists so that no task has to be classified before its rules can be found:
+measured on the upstream vault, all 51 rules in full are ~99k characters while
+the index is ~6.7k (6.7%), cheap enough to read whole. Recognising the rule that
+bites is more reliable than recalling that it exists, and nothing notices when
+recall fails.
+
+`--for-trigger` narrows to one term once the task is clear. Do not replace it
+with a grep: `^  - term$` misses every CRLF file and also matches the same word
+sitting in `tags`, and on the upstream vault one term lost 2 of its 5 rules to
+the first error while gaining 1 it does not have to the second.
+
+A rule supplies its headline in one of two shapes: an `In one line` (or
+`一句話版`) section holding a blockquote, or — for a rule whose whole body is a
+single short paragraph — that paragraph. Past 400 characters the paragraph is
+prose rather than a headline, and `--index` reports the rule as missing one
+instead of pasting a wall of text into the listing.
+
 Run `python framework/validate_conventions.py --root conventions --strict-registry`
 after changes. Drop `--strict-registry` when validating a subset such as one
 domain folder: the reverse checks expect every `shipped` id to be present.

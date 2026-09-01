@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import setup_v2
-from framework.validate_conventions import (parse_registry, rules_for_trigger,
-                                            validate)
+from framework.validate_conventions import (build_index, headline, parse_registry,
+                                            rules_for_trigger, validate)
 
 REGISTRY = ROOT / 'conventions' / 'registry.md'
 
@@ -246,6 +246,41 @@ class RegistryTests(unittest.TestCase):
                                       encoding='utf-8')
                     errors = [str(e) for e in validate(tree)]
                     self.assertTrue([e for e in errors if 'vocabulary' in e], errors)
+
+    def test_index_carries_every_rule_and_its_headline(self):
+        # The index exists so that no task has to be classified before the
+        # rules can be found, which only works if it is complete: a rule with
+        # no headline is invisible in exactly the situation the index is for.
+        index = build_index(ROOT / 'conventions')
+        self.assertNotIn('# missing a one-line version', index)
+        self.assertNotIn('(no one-line version)', index)
+        rules, _, _, _ = parse_registry(REGISTRY)
+        shipped = {i for i, r in rules.items() if r['status'] == 'shipped'}
+        for rule_id in shipped:
+            self.assertIn(rule_id, index)
+        self.assertEqual(len(index.splitlines()), len(shipped))
+
+    def test_index_reports_a_rule_with_no_headline(self):
+        # Silence here would be the worst outcome: an incomplete index that
+        # looks complete sends the agent on with rules it never saw.
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = Path(tmp) / 'conventions'
+            shutil.copytree(ROOT / 'conventions', tree)
+            victim = tree / 'core' / 'Do not invent facts or thresholds.md'
+            text = victim.read_text(encoding='utf-8')
+            # Past the cap the opening paragraph is prose, not a headline.
+            victim.write_text(text.rstrip() + ' padding.' * 60 + '\n',
+                              encoding='utf-8')
+            index = build_index(tree)
+            self.assertIn('# missing a one-line version: KB-EVIDENCE-001', index)
+
+    def test_headline_joins_a_multi_line_blockquote(self):
+        text = (
+            '---\ntype: convention\n---\n\n'
+            '## 一句話版\n\n> 第一行，\n> 第二行。\n\n## 下一節\n\n> 不該被吃進來\n'
+        )
+        self.assertEqual(headline(text), '第一行， 第二行。')
+        self.assertIsNone(headline('---\ntype: convention\n---\n\n## 別的\n\n> x\n'))
 
     def test_trigger_retrieval_ignores_tags_and_survives_crlf(self):
         # The two obvious greps for this are both wrong, in opposite
