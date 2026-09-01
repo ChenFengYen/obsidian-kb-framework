@@ -15,7 +15,7 @@ of scalars, so the nesting and schema checks a YAML file would buy are unused,
 while a Markdown table is readable in the vault it governs and its rule names
 are links that show up in backlinks and the graph.
 
-A name wrapped in `[[ ]]` is the note that claims the id **in this tree**; plain
+A name in double brackets is the note that claims the id **in this tree**; plain
 text means the id is registered but no note here claims it. The brackets are not
 maintained by hand - `--strict-registry` compares them against the notes on disk
 and fails when they disagree.

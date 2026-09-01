@@ -259,6 +259,31 @@ def check_registry(seen, registry_path, strict=False):
     return errors
 
 
+def rules_for_trigger(root, term):
+    '''List the Conventions that declare `term`, as (rule_id, path) pairs.
+
+    This is the retrieval the closed vocabulary exists for, and it is a
+    function rather than a documented grep because both obvious greps are
+    wrong: `^  - term$` misses every CRLF file, and it also matches the same
+    word sitting in `tags`. Measured on the upstream vault, those two errors
+    hit 2 of 5 matches for one term in opposite directions.
+    '''
+    found = []
+    for path in sorted(Path(root).rglob('*.md')):
+        if path.name in NOT_A_CONVENTION:
+            continue
+        try:
+            data = frontmatter(path)
+        except Exception:
+            continue
+        if data.get('type') != 'convention':
+            continue
+        triggers = data.get('triggers')
+        if isinstance(triggers, list) and term in triggers:
+            found.append((data.get('rule_id', '?'), path))
+    return found
+
+
 def validate(root, registry=None, strict=False):
     errors = []
     seen = {}
@@ -338,7 +363,22 @@ def main():
              'match it. Use when the root is the tree the registry describes, '
              'not a subset of it.',
     )
+    parser.add_argument(
+        '--for-trigger',
+        metavar='TERM',
+        help='List the Conventions that declare TERM and exit. This is how an '
+             'agent pulls the rules for the work it is about to do.',
+    )
     args = parser.parse_args()
+
+    if args.for_trigger:
+        found = rules_for_trigger(args.root, args.for_trigger)
+        if not found:
+            print(f'no Convention declares trigger {args.for_trigger!r}')
+            raise SystemExit(1)
+        for rule_id, path in found:
+            print(f'{rule_id}\t{path}')
+        return
 
     errors = validate(args.root, args.registry, args.strict_registry)
     if errors:

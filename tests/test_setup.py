@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 import setup_v2
-from framework.validate_conventions import parse_registry, validate
+from framework.validate_conventions import (parse_registry, rules_for_trigger,
+                                            validate)
 
 REGISTRY = ROOT / 'conventions' / 'registry.md'
 
@@ -245,6 +246,34 @@ class RegistryTests(unittest.TestCase):
                                       encoding='utf-8')
                     errors = [str(e) for e in validate(tree)]
                     self.assertTrue([e for e in errors if 'vocabulary' in e], errors)
+
+    def test_trigger_retrieval_ignores_tags_and_survives_crlf(self):
+        # The two obvious greps for this are both wrong, in opposite
+        # directions: `^  - term$` misses CRLF files, and it also matches the
+        # same word sitting in `tags`. Retrieval that quietly returns the
+        # wrong set is worse than none - the agent reads rules it was not
+        # given and misses the ones it was.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            note = (
+                '---\ntype: convention\nrule_id: KB-EVIDENCE-001\n'
+                'applies_to: [all-agents]\n'
+                'tags:\n  - verification\n'
+                'triggers:\n  - claim-writing\n'
+                'enforcement: review\nseverity: error\nstatus: active\n---\n本文\n'
+            )
+            (root / 'tagged.md').write_bytes(note.encode('utf-8'))
+
+            crlf = note.replace('KB-EVIDENCE-001', 'KB-VERIFY-001')
+            crlf = crlf.replace('  - claim-writing', '  - verification')
+            (root / 'crlf.md').write_bytes(crlf.replace('\n', '\r\n').encode('utf-8'))
+
+            hits = rules_for_trigger(root, 'verification')
+            self.assertEqual([r for r, _ in hits], ['KB-VERIFY-001'])
+            self.assertEqual(
+                [r for r, _ in rules_for_trigger(root, 'claim-writing')],
+                ['KB-EVIDENCE-001'])
+            self.assertEqual(rules_for_trigger(root, 'note-write'), [])
 
     def test_scope_is_no_longer_required(self):
         # scope carried 51 distinct values across 51 rules, 75% of them used
