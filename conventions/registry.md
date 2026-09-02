@@ -45,7 +45,7 @@ deliberately absent here; this repository only reserves the namespace so generic
 
 | rule_id | name | name_zh | status | pack | former_ids |
 |---|---|---|---|---|---|
-| `KB-ACCESS-001` | Fixed operation vocabulary for knowledge base access | 知識庫存取須用固定操作 | reserved | — | — |
+| `KB-ACCESS-001` | [[Fixed operation vocabulary for knowledge base access]] | 知識庫存取須用固定操作 | shipped | core | — |
 | `KB-ASSET-001` | Image asset naming | 圖片命名規約 | reserved | — | — |
 | `KB-AUTOMATION-001` | Segment LLM workflows under subscription limits | 訂閱模式LLM工作流分段 | reserved | — | — |
 | `KB-CHANGE-001` | [[Approval before destructive or published changes]] | 變更提交前核准 | shipped | core | — |
@@ -62,7 +62,7 @@ deliberately absent here; this repository only reserves the namespace so generic
 | `KB-EXPERIMENT-001` | [[Record experiment specifications]] | 乾實驗環境規格 | shipped | research | — |
 | `KB-FRONTMATTER-001` | [[Frontmatter remains structured]] | Frontmatter清單格式 | shipped | obsidian | — |
 | `KB-FRONTMATTER-002` | Frontmatter field semantics | Frontmatter欄位語意 | reserved | — | — |
-| `KB-HISTORY-001` | Preserve note and convention history | 筆記與規約歷程保留 | reserved | — | — |
+| `KB-HISTORY-001` | [[Preserve note and convention history]] | 筆記與規約歷程保留 | shipped | core | — |
 | `KB-LANG-001` | Traditional Chinese wording in notes | 繁體中文筆記用詞 | reserved | — | — |
 | `KB-LANG-002` | Space around inline markers in CJK text | 中文粗體前後加半形空格 | reserved | — | — |
 | `KB-LINK-001` | [[Obsidian link safety]] | Obsidian連結規約 | shipped | obsidian | — |
@@ -75,9 +75,9 @@ deliberately absent here; this repository only reserves the namespace so generic
 | `KB-STRUCT-001` | Vault directory and note type structure | Vault目錄與筆記型別規約 | reserved | — | — |
 | `KB-TABLE-001` | Markdown tables and multi-image layout | Markdown表格與多圖排版 | reserved | — | — |
 | `KB-TITLE-001` | Concept note titles | 概念筆記標題規約 | reserved | — | — |
-| `KB-VCS-001` | Ignore rules must survive directory renames | 忽略規則與目錄改名 | reserved | — | — |
-| `KB-VERIFY-001` | Confirm the measurement method before trusting numbers | 驗證數字前先確認量測方法 | reserved | — | — |
-| `KB-VERIFY-002` | Counterbalance presentation order in paired comparison | 成對比較須抵銷呈現順序 | reserved | — | — |
+| `KB-VCS-001` | [[Ignore rules must survive directory renames]] | 忽略規則與目錄改名 | shipped | core | — |
+| `KB-VERIFY-001` | [[Confirm the measurement method before trusting numbers]] | 驗證數字前先確認量測方法 | shipped | core | — |
+| `KB-VERIFY-002` | [[Counterbalance presentation order in paired comparison]] | 成對比較須抵銷呈現順序 | shipped | core | — |
 | `KB-VERIFY-003` | Verification tools must not truncate by default | 驗證工具預設必須不省略 | reserved | — | — |
 | `KB-VERIFY-004` | Prove an off-site copy exists, do not infer it from configuration | 離機副本要實測不看設定 | reserved | — | — |
 | `KB-VERIFY-005` | A monitor's baseline must expire | 監測基準必須會過期 | reserved | — | — |
@@ -85,7 +85,7 @@ deliberately absent here; this repository only reserves the namespace so generic
 | `KB-VISUAL-002` | matplotlib CJK font rendering | matplotlib中文字型渲染 | reserved | — | — |
 | `KB-VISUAL-003` | ASCII diagram alignment | ASCII示意圖對齊規約 | reserved | — | — |
 | `KB-VOCAB-001` | Classification vocabularies must be closed | 分類詞彙必須封閉 | reserved | — | — |
-| `KB-WRITING-001` | Notes teach, they do not log edits | 筆記不寫修改過程 | reserved | — | — |
+| `KB-WRITING-001` | [[Notes teach, they do not log edits]] | 筆記不寫修改過程 | shipped | core | — |
 | `KB-WRITING-002` | Choose a narrative mode before enriching a note | 豐富筆記先選敘事模式 | reserved | — | — |
 | `KB-WRITING-003` | Callouts need an entry point in the body | callout須有正文入口 | reserved | — | — |
 
