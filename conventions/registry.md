@@ -79,6 +79,8 @@ deliberately absent here; this repository only reserves the namespace so generic
 | `KB-VERIFY-001` | Confirm the measurement method before trusting numbers | 驗證數字前先確認量測方法 | reserved | — | — |
 | `KB-VERIFY-002` | Counterbalance presentation order in paired comparison | 成對比較須抵銷呈現順序 | reserved | — | — |
 | `KB-VERIFY-003` | Verification tools must not truncate by default | 驗證工具預設必須不省略 | reserved | — | — |
+| `KB-VERIFY-004` | Prove an off-site copy exists, do not infer it from configuration | 離機副本要實測不看設定 | reserved | — | — |
+| `KB-VERIFY-005` | A monitor's baseline must expire | 監測基準必須會過期 | reserved | — | — |
 | `KB-VISUAL-001` | Sequential palette runs high red to low blue | 連續色盤使用高紅低藍 | reserved | — | — |
 | `KB-VISUAL-002` | matplotlib CJK font rendering | matplotlib中文字型渲染 | reserved | — | — |
 | `KB-VISUAL-003` | ASCII diagram alignment | ASCII示意圖對齊規約 | reserved | — | — |
