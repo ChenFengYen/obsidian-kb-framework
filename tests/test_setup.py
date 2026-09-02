@@ -67,6 +67,36 @@ class SetupTests(unittest.TestCase):
             self.assertNotIn('ObsidianWork', text)
             self.assertNotIn('Plant physiology', text)
 
+    def test_agents_contract_is_whole_and_within_the_load_cap(self):
+        '''The contract must carry its own end marker and fit in one load.
+
+        Measured 2026-09-02 against Antigravity: a rules file is truncated at
+        24,000 bytes with no error, so a contract can arrive with its ending
+        missing while everything else looks normal. `AGENTS-EOF` is what makes
+        that visible from inside a session; this test is what keeps the file
+        small enough that it never happens.
+        '''
+        cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / 'vault'
+            setup_v2.create_vault(cfg, target)
+            agents = (target / 'AGENTS.md').read_text(encoding='utf-8')
+            self.assertTrue(agents.rstrip().endswith('AGENTS-EOF'))
+            self.assertIn('AGENTS-EOF', agents.split('## Startup self-check')[1])
+            size = len((target / 'AGENTS.md').read_bytes())
+            self.assertLess(size, 20000, 'AGENTS.md is approaching the 24,000-byte load cap')
+
+    def test_agents_contract_carries_debrief_and_skills(self):
+        cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / 'vault'
+            setup_v2.create_vault(cfg, target)
+            agents = (target / 'AGENTS.md').read_text(encoding='utf-8')
+            self.assertIn('## Conversation debrief', agents)
+            self.assertIn('## Available skills', agents)
+            for skill in setup_v2.CORE_SKILLS:
+                self.assertIn('/' + skill, agents)
+
     def test_neuroscience_has_no_domain_leakage(self):
         path = ROOT / 'examples' / 'configs' / 'neuroscience.yaml'
         cfg = yaml.safe_load(path.read_text(encoding='utf-8'))

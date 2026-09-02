@@ -170,6 +170,30 @@ def render_agents(cfg):
         '- Evaluate notes by clarity, evidence, connections, and discoverability, not line count.',
         '- MOCs are narrative maps of relationships, not alphabetical link lists.',
         '',
+        '## Conversation debrief',
+        '',
+        'Understanding produced in conversation is lost unless it is written down,',
+        'and writing all of it down is worse than writing none. When a session has',
+        'produced something durable:',
+        '',
+        '1. Propose the candidates first, as a list. Do not write during the work.',
+        '2. Update an existing note before creating a new one. A new note has to',
+        '   answer a question that stands on its own.',
+        '3. Record the source, the limits, and what is still unresolved - not only',
+        '   the conclusion.',
+        '4. End with where to resume next time.',
+        '',
+        '## Available skills',
+        '',
+        'Installed under `.claude/skills/`. Claude Code invokes them by name; other',
+        'agents cannot run them but can read each `SKILL.md` as the written',
+        'procedure for that task.',
+        '',
+        '- `/init-domain` - create a domain, its MOC, and the first research questions.',
+        '- `/review-vault` - diagnose orphans, broken links, and MOC coverage.',
+        '- `/suggest-next` - rank what to do next from open questions and gaps.',
+        '- `/debrief` - write confirmed insights from this conversation back into the vault.',
+        '',
         '## Task routing',
         '',
     ]
@@ -184,17 +208,23 @@ def render_agents(cfg):
         'Agent: <name / model, if known>',
         'cwd: <working directory>',
         'Loaded: AGENTS / conventions / memory (or memory unavailable)',
+        'Whole file: AGENTS-EOF seen? / truncation notice in context?',
         'Capabilities: read / write / shell / network',
         'Mode: read-only investigation | proposal-first change',
         '```',
         '',
         'Report load state, limits, and the goal for this session. Do not restate the rules.',
+        '',
+        'The last line of this file is `AGENTS-EOF`. Some agents cap how much of a',
+        'rules file they load and simply stop reading at the limit, so a contract',
+        'can arrive with its ending missing and nothing else looking wrong. If you',
+        'cannot see that marker, say so - you are working from a partial contract.',
     ])
     lines.extend(['', '## Configured profile', ''])
     lines.extend(profile_lines(cfg))
     lines.extend(['', '## Enabled convention packs', ''])
     lines.extend('- `' + pack + '`' for pack in packs)
-    lines.append('')
+    lines.extend(['', 'AGENTS-EOF', ''])
     return '\n'.join(lines)
 
 
