@@ -66,27 +66,48 @@ python setup.py
 
 論文圖表與 Zotero 工具屬可選模組，不會自動建立概念連結。
 
-## 產生的 Vault 結構
+## 框架與產物
+
+repo 是模板來源，本身不是知識庫。`setup.py` 讀 `vault_config.yaml` 生成一個可獨立版本控管的 vault，兩邊的檔案有對應關係但職責不同。
 
 ```text
-your-vault/
-├── Home.md
-├── vault_config.yaml
-├── AGENTS.md                 # 跨 Agent 核心規則
-├── CLAUDE.md                 # Claude adapter
-├── GEMINI.md                 # Gemini adapter
-├── .claude/skills/
-├── Domain/
-│   ├── Map/
-│   ├── Note/
-│   └── Pic/
-└── Papers/
-    ├── PDF-raw/
-    ├── PDF-md/
-    ├── Final-md/
-    ├── PDF-assets/
-    └── scripts/
+obsidian-kb-framework/                     模板來源，本身不是任何人的 vault
+|
++-- AGENTS.md                              給「來改框架的 agent」的規則
++-- setup_v2.py                            生成器；vault 的 AGENTS.md 由它算出來
++-- prompts/
+|   +-- CLAUDE.md GEMINI.md AgentRules.md  薄轉接檔，原樣複製進 vault
+|   +-- skills/                            init-domain review-vault suggest-next debrief
++-- conventions/
+|   +-- registry.md                        KB-* 編號與 trigger 詞彙的唯一權威
+|   +-- core/ obsidian/                    預設 pack
+|   +-- research/ windows-zh-tw/           選用 pack
++-- framework/                             validate_conventions vault_health note_graph
++-- paper-pipeline/ zotero-tools/          選用模組，預設不裝
++-- templates/ examples/ docs/ tests/
+        |
+        |   python setup.py                依 vault_config.yaml 決定裝哪些
+        v
+your-vault/                                產物，可獨立成一個 git repo
+|
++-- AGENTS.md                              啟動權威，規則全文只有這一份
++-- CLAUDE.md GEMINI.md AgentRules.md      薄轉接；Codex 等直接讀 AGENTS.md
++-- vault_config.yaml
++-- Home.md
++-- <Domain>/
+|   +-- Map/ Note/ Pic/                    Map 內含 <Domain>_MOC.md
++-- KnowledgeBase/
+|   +-- Convention/                        依 packs 安裝的規約，加一份 registry.md
+|   +-- Map/                               Knowledge Base Conventions.md
++-- tools/                                 從 framework/ 複製過去
++-- .claude/skills/
++-- Papers/                                只有啟用 zotero 或 paper_pipeline 時才建立
+    +-- PDF-raw/ PDF-md/ Final-md/ PDF-assets/ scripts/
 ```
+
+**沒有任何檔名是三家 agent 通吃的**，所以規則全文只存在 `AGENTS.md`，其餘都是薄轉接檔。轉接檔一旦長出自己的規則，就變成第二份權威。
+
+兩邊的 `AGENTS.md` 是不同的兩份東西，也是不同的兩件工作：repo 根目錄那份給「來改框架的人」；vault 那份是 `setup_v2.py` 依 `vault_config.yaml` **算出來的**——啟用了哪些 pack、哪些模組，會決定任務路由表多出哪幾列。它不是複製某個模板檔，所以要改生成的規則就改生成器，不是去找一份範本。
 
 ## 文件
 
