@@ -285,7 +285,7 @@ def write_registry(cfg, destination):
     source = ROOT / 'conventions' / 'registry.md'
     if not source.is_file():
         return
-    rules, _, _, errors = parse_registry(source)
+    rules, _, _, _, errors = parse_registry(source)
     if errors:
         raise ValueError('source registry is invalid:\n' + '\n'.join(errors))
 

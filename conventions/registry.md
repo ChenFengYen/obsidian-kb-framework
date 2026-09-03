@@ -41,6 +41,14 @@ deliberately absent here; this repository only reserves the namespace so generic
 | `PHENO-` | downstream vault (plant phenotyping) |
 | `ML-` | downstream vault (machine learning) |
 
+A vault whose domain folders sit inside its own tree can go one step further
+and enumerate their ids, in a table headed `| id | name_zh | lifecycle | note |`.
+That table is the request: ids under an enumerated prefix are then checked like
+`KB-*` ones, while a prefix that is only reserved stays unchecked, so this
+registry - whose domain folders are outside its tree - keeps the behaviour it
+has always had. `lifecycle` is that table's own vocabulary, `active` or
+`retired`, and says nothing about `status`.
+
 ## Rules
 
 | rule_id | name | name_zh | status | pack | former_ids |

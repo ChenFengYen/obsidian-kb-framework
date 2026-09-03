@@ -29,6 +29,31 @@ def mutated_tree(tmp, mutate):
     return tree
 
 
+DOMAIN_TABLE = """
+
+## Domain rule ids
+
+| id | name_zh | lifecycle | note |
+|---|---|---|---|
+| `PHENO-QC-001` | [[Object level QC stays binary]] | active | — |
+| `PHENO-TRAIT-002` | — | retired | downgraded into the table it governed |
+"""
+
+
+def with_domain_table(text):
+    return text + DOMAIN_TABLE
+
+
+def claiming(root, rule_id):
+    '''Point one core Convention at another id, and return the tree.'''
+    victim = root / 'conventions' / 'core' / 'Do not invent facts or thresholds.md'
+    victim.write_text(
+        victim.read_text(encoding='utf-8').replace('KB-EVIDENCE-001', rule_id),
+        encoding='utf-8',
+    )
+    return root / 'conventions'
+
+
 def all_text(root):
     suffixes = {'.md', '.yaml', '.yml', '.json', '.py', '.js'}
     chunks = []
@@ -181,6 +206,79 @@ class RegistryTests(unittest.TestCase):
             errors = validate(root / 'conventions')
             self.assertFalse([error for error in errors if 'PHENO-QC-001' in error])
 
+    def test_enumerated_prefix_rejects_an_unlisted_id(self):
+        # The rows are what asks for the check: once PHENO- is enumerated, an
+        # id under it is no longer waved through by the prefix alone.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copytree(ROOT / 'conventions', root / 'conventions')
+            registry = root / 'conventions' / 'registry.md'
+            registry.write_text(
+                with_domain_table(registry.read_text(encoding='utf-8')),
+                encoding='utf-8',
+            )
+            errors = [str(e) for e in validate(claiming(root, 'PHENO-XXX-999'))]
+            self.assertTrue(
+                [e for e in errors if 'PHENO-XXX-999' in e and 'domain table' in e],
+                errors,
+            )
+
+    def test_enumerated_prefix_accepts_a_listed_id(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copytree(ROOT / 'conventions', root / 'conventions')
+            registry = root / 'conventions' / 'registry.md'
+            registry.write_text(
+                with_domain_table(registry.read_text(encoding='utf-8')),
+                encoding='utf-8',
+            )
+            errors = [str(e) for e in validate(claiming(root, 'PHENO-QC-001'))]
+            self.assertFalse([e for e in errors if 'PHENO-QC-001' in e], errors)
+
+    def test_domain_rows_are_silent_for_a_prefix_not_scanned(self):
+        # No single root covers every namespace. A run that sees no PHENO-
+        # note must not report the enumerated PHENO- ids as missing.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copytree(ROOT / 'conventions', root / 'conventions')
+            registry = root / 'conventions' / 'registry.md'
+            registry.write_text(
+                with_domain_table(registry.read_text(encoding='utf-8')),
+                encoding='utf-8',
+            )
+            errors = [str(e) for e in validate(root / 'conventions', strict=True)]
+            self.assertFalse([e for e in errors if 'PHENO-' in e], errors)
+
+    def test_retired_domain_id_cannot_be_claimed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copytree(ROOT / 'conventions', root / 'conventions')
+            registry = root / 'conventions' / 'registry.md'
+            registry.write_text(
+                with_domain_table(registry.read_text(encoding='utf-8')),
+                encoding='utf-8',
+            )
+            tree = claiming(root, 'PHENO-TRAIT-002')
+            errors = [str(e) for e in validate(tree, strict=True)]
+            self.assertTrue(
+                [e for e in errors if 'PHENO-TRAIT-002' in e and 'retired' in e],
+                errors,
+            )
+
+    def test_domain_lifecycle_vocabulary_is_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tree = mutated_tree(
+                tmp,
+                lambda text: with_domain_table(text).replace(
+                    '| active | — |', '| archived | — |'
+                ),
+            )
+            errors = [str(e) for e in validate(tree)]
+            self.assertTrue(
+                [e for e in errors if 'lifecycle' in e and 'archived' in e],
+                errors,
+            )
+
     def test_partial_pack_install_still_validates(self):
         cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
         cfg['conventions']['packs'] = ['core']
@@ -190,7 +288,7 @@ class RegistryTests(unittest.TestCase):
             conventions = target / 'KnowledgeBase' / 'Convention'
             self.assertTrue((conventions / 'registry.md').is_file())
             self.assertEqual(validate(conventions, strict=True), [])
-            rules, _, _, errors = parse_registry(conventions / 'registry.md')
+            rules, _, _, _, errors = parse_registry(conventions / 'registry.md')
             self.assertEqual(errors, [])
             shipped = {i for i, r in rules.items() if r['status'] == 'shipped'}
             self.assertIn('KB-EVIDENCE-001', shipped)      # core, installed
@@ -229,7 +327,7 @@ class RegistryTests(unittest.TestCase):
             self.assertFalse([e for e in errors if 'missing YAML frontmatter' in e], errors)
 
     def test_registry_parses_every_row(self):
-        rules, prefixes, _, errors = parse_registry(REGISTRY)
+        rules, prefixes, _, _, errors = parse_registry(REGISTRY)
         self.assertEqual(errors, [])
         self.assertIn('PHENO-', prefixes)
         # Every row the file lists must survive parsing. A parser that drops
@@ -240,7 +338,7 @@ class RegistryTests(unittest.TestCase):
             self.assertIn(entry['status'], {'shipped', 'reserved'})
 
     def test_every_trigger_is_in_the_vocabulary(self):
-        _, _, vocabulary, errors = parse_registry(REGISTRY)
+        _, _, _, vocabulary, errors = parse_registry(REGISTRY)
         self.assertEqual(errors, [])
         self.assertTrue(vocabulary)
         self.assertEqual(sorted(vocabulary), sorted(set(vocabulary)))
@@ -284,7 +382,7 @@ class RegistryTests(unittest.TestCase):
         index = build_index(ROOT / 'conventions')
         self.assertNotIn('# missing a one-line version', index)
         self.assertNotIn('(no one-line version)', index)
-        rules, _, _, _ = parse_registry(REGISTRY)
+        rules, _, _, _, _ = parse_registry(REGISTRY)
         shipped = {i for i, r in rules.items() if r['status'] == 'shipped'}
         for rule_id in shipped:
             self.assertIn(rule_id, index)

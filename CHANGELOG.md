@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.5.0 - 2026-09-03
+
+### Added
+
+- **登記表可以列舉領域編號，而列舉本身就是開啟驗證的動作。** 原本 `PHENO-`／`ML-` 這類前綴只被「保留」：`check_registry` 對前綴命中的編號整段 `continue`，所以沒登記的領域編號一律放行。這在 framework 是對的——它的領域資料夾在樹外，本來就管不到；但複製到「領域資料夾就在自己樹裡」的 vault 之後就不成立了，那裡的領域編號沒有任何地方登記，退役也記錄不到。新規則是 **前綴有列舉列 ⇒ 驗證；只宣告前綴、沒有列舉列 ⇒ 跳過**，所以本 repo 的登記表沒有領域列、行為完全不變。分岔的是資料，不是結構。
+- 領域表欄位 `| id | name_zh | lifecycle | note |`。第一欄刻意**不叫** `rule_id`——`parse_registry` 用 `header[:1] == ['rule_id']` 認規則表，同名會讓領域表被當成規則表而在欄位比對上直接失敗。
+- `lifecycle` 是該表自己的封閉詞彙（`active`／`retired`），與 `status` 無關：`status` 回答「framework 有沒有出貨」，那個問題對領域規約不存在。退役編號永久佔號，與 `KB-*` 相同。
+
+### Changed
+
+- `parse_registry()` 回傳值由四元組改為 **`(rules, prefixes, domain, triggers, errors)`**（breaking，內部 API）。三個呼叫端已同步：`check_registry`、`main` 的詞彙查詢、`setup_v2.write_registry`。
+- `--strict-registry` 下的領域檢查**只判斷本次 root 實際掃到的前綴**。沒有任何一個 root 同時涵蓋所有命名空間——`--root <KB 目錄>` 讀不到領域資料夾——所以少了這層限縮，開 strict 就會把所有領域列報成「無筆記宣稱」。
+
+### Tests
+
+- 33 則（28 → 33）：列舉後拒絕未登記的領域編號、接受已登記的、未掃到的前綴保持靜默、退役編號不得被宣稱、`lifecycle` 詞彙封閉。
+
 ## 2.4.0 - 2026-09-01
 
 ### Added

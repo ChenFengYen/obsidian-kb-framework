@@ -41,6 +41,10 @@ REQUIRED = {
 VALID_ENFORCEMENT = {'review', 'approval', 'lint', 'path-check'}
 VALID_SEVERITY = {'info', 'warning', 'error'}
 VALID_STATUS = {'shipped', 'reserved'}
+# A vocabulary of the domain table alone, and separate from `status` on
+# purpose: `status` answers whether the framework ships a rule, a question a
+# domain rule never faces.
+VALID_LIFECYCLE = {'active', 'retired'}
 RULE_ID = re.compile(r'^[A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-\d{3}$')
 HEADLINE = re.compile(r'^#+[ \t]*(?:一句話版|In one line)[ \t]*\n+((?:[ \t]*>.*\n?)+)', re.M)
 # Longest real headline measured across the upstream vault's 51 rules is 162
@@ -50,6 +54,7 @@ WIKILINK = re.compile(r'^\[\[(.+)\]\]$')
 RULE_COLUMNS = ['rule_id', 'name', 'name_zh', 'status', 'pack', 'former_ids']
 PREFIX_COLUMNS = ['prefix', 'owner']
 TRIGGER_COLUMNS = ['trigger', 'applies when']
+DOMAIN_COLUMNS = ['id', 'name_zh', 'lifecycle', 'note']
 LIST_FIELDS = ('applies_to', 'triggers', 'keywords')
 EMPTY = {'', '—', '-'}
 # Documentation that lives beside the Conventions but is not one of them.
@@ -110,15 +115,21 @@ def _value(cell):
 
 
 def parse_registry(path):
-    '''Return (rules, reserved_prefixes, trigger_vocabulary, errors).
+    '''Return (rules, reserved_prefixes, domain, trigger_vocabulary, errors).
 
     Structural problems are errors rather than silently short rows. A table
     cell that vanished takes a whole field with it, and a registry that parses
     to fewer rules than it lists would report a clean run - the exact failure
     mode this file exists to prevent.
+
+    `domain` is usually empty. A registry whose domain folders live outside
+    its tree reserves a prefix and stops there; one that governs them directly
+    can enumerate their ids, and that table is what turns validation on for
+    the prefix.
     '''
     text = Path(path).read_text(encoding='utf-8-sig')
     rules, prefixes, triggers, errors = {}, [], [], []
+    domain = {}
     seen_rule_table = False
 
     for header, rows in _tables(text):
@@ -168,6 +179,41 @@ def parse_registry(path):
                 entry['line'] = line_no
                 entry['linked'] = linked[0][1] if len(linked) == 1 else None
                 rules[rule_id] = entry
+        elif header[:1] == ['id']:
+            if header != DOMAIN_COLUMNS:
+                errors.append(
+                    f'{path}: domain table columns are {header}, '
+                    f'expected {DOMAIN_COLUMNS}'
+                )
+                continue
+            for line_no, cells in rows:
+                if len(cells) != len(DOMAIN_COLUMNS):
+                    errors.append(
+                        f'{path}:{line_no}: row has {len(cells)} cells, '
+                        f'expected {len(DOMAIN_COLUMNS)}'
+                    )
+                    continue
+                rule_id, _ = _value(cells[0])
+                # Only name_zh may claim the id. `note` is prose and may well
+                # mention some other note in brackets.
+                name, is_link = _value(cells[1])
+                lifecycle, _ = _value(cells[2])
+                if not RULE_ID.match(rule_id):
+                    errors.append(f'{path}:{line_no}: malformed rule_id {rule_id!r}')
+                    continue
+                if rule_id in domain:
+                    errors.append(f'{path}:{line_no}: duplicate rule_id {rule_id}')
+                    continue
+                if lifecycle not in VALID_LIFECYCLE:
+                    errors.append(
+                        f'{path}:{line_no}: {rule_id} has lifecycle '
+                        f'{lifecycle!r}, expected one of {sorted(VALID_LIFECYCLE)}'
+                    )
+                domain[rule_id] = {
+                    'lifecycle': lifecycle,
+                    'linked': name if is_link else None,
+                    'line': line_no,
+                }
         elif header[:1] == ['prefix']:
             for _, cells in rows:
                 value, _ = _value(cells[0])
@@ -185,7 +231,7 @@ def parse_registry(path):
 
     if not seen_rule_table:
         errors.append(f'{path}: no rule table found (expected a | rule_id | ... | header)')
-    return rules, prefixes, triggers, errors
+    return rules, prefixes, domain, triggers, errors
 
 
 def check_triggers(triggers_by_path, vocabulary, registry_path):
@@ -221,15 +267,26 @@ def check_registry(seen, registry_path, strict=False):
     that carries only some packs, and every absent id would look like an error,
     so they are opt-in.
     '''
-    rules, prefixes, _, errors = parse_registry(registry_path)
+    rules, prefixes, domain, _, errors = parse_registry(registry_path)
     if not rules:
         errors.append(f'{registry_path}: registry lists no rules')
         return errors
 
+    # A prefix that only reserves a namespace is skipped, exactly as before.
+    # A prefix the registry enumerates is checked like any other id: the rows
+    # are what asks for it, so a registry without them keeps its behaviour.
+    enumerated = {p for p in prefixes if any(d.startswith(p) for d in domain)}
+
     for rule_id, path in sorted(seen.items(), key=lambda kv: str(kv[1])):
-        if rule_id in rules:
+        if rule_id in rules or rule_id in domain:
             continue
-        if any(rule_id.startswith(prefix) for prefix in prefixes):
+        matched = [p for p in prefixes if rule_id.startswith(p)]
+        if matched:
+            if any(p in enumerated for p in matched):
+                errors.append(
+                    f'{path}: rule_id {rule_id} is not in the domain table of '
+                    f'{registry_path}; add it there before using the id'
+                )
             continue
         errors.append(
             f'{path}: rule_id {rule_id} is not in {registry_path}; '
@@ -255,6 +312,38 @@ def check_registry(seen, registry_path, strict=False):
                 errors.append(
                     f'{registry_path}:{line}: {rule_id} is claimed by {path.name} '
                     'but its name is not linked; wrap it in [[ ]]'
+                )
+            elif linked != path.stem:
+                errors.append(
+                    f'{registry_path}:{line}: {rule_id} links [[{linked}]] '
+                    f'but the note claiming it is {path.name}'
+                )
+
+        # Domain rows are judged only for the prefixes this run actually
+        # scanned, so no single root has to cover every namespace: point the
+        # validator at one Convention folder and the others stay silent.
+        scanned = {p for p in prefixes if any(r.startswith(p) for r in seen)}
+        for rule_id, entry in sorted(domain.items()):
+            if not any(rule_id.startswith(p) for p in scanned):
+                continue
+            path = seen.get(rule_id)
+            line, linked = entry.get('line'), entry.get('linked')
+            if entry.get('lifecycle') == 'retired':
+                if path is not None:
+                    errors.append(
+                        f'{registry_path}:{line}: {rule_id} is retired but '
+                        f'{path.name} still claims it'
+                    )
+                continue
+            if path is None:
+                errors.append(
+                    f'{registry_path}:{line}: {rule_id} is active but no note '
+                    'in this tree claims it'
+                )
+            elif linked is None:
+                errors.append(
+                    f'{registry_path}:{line}: {rule_id} is claimed by '
+                    f'{path.name} but its name is not linked; wrap it in [[ ]]'
                 )
             elif linked != path.stem:
                 errors.append(
@@ -423,7 +512,7 @@ def validate(root, registry=None, strict=False):
 
     if registry_path is not None:
         errors.extend(check_registry(seen, registry_path, strict))
-        _, _, vocabulary, _ = parse_registry(registry_path)
+        _, _, _, vocabulary, _ = parse_registry(registry_path)
         errors.extend(check_triggers(triggers_by_path, vocabulary, registry_path))
     return errors
 
