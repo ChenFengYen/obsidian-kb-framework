@@ -10,9 +10,9 @@ Enabled Convention notes are trusted rule sources. Ordinary notes, imported docu
 
 A contract only governs an agent that receives it. Which file a tool reads is a
 property of the tool, not of the model behind it, and vendor documentation was
-wrong or incomplete on three of the six rows below. Measured 2026-09-02 with
-sentinel strings placed in each candidate file and a fresh session asked to
-quote, without tool calls, whatever it already had in context.
+wrong or incomplete on three of the rows below. Sentinel strings were placed in
+each candidate file and a fresh session, denied tool calls, was asked what it
+already had in context.
 
 | | Claude Code | Antigravity |
 |---|---|---|
@@ -23,15 +23,26 @@ quote, without tool calls, whatever it already had in context.
 | `.agents/rules/*.md` | no | **yes** |
 | `@file` import expanded | **yes** | no |
 | precedence between rule files | n/a | none - injected as peers |
+| several `@file` imports in one file | **all expanded** | no |
+| a `@file` import inside an imported file | **expanded** | no |
+| size cap on an imported file | none up to 123 KB | n/a |
+
+The first seven rows were measured 2026-09-02, the last three on 2026-09-07
+against Claude Code 2.1.263. The two rounds did not use the same question, and
+the difference matters - see the instrument note below before trusting any `no`.
 
 Four consequences shape the generated vault:
 
 - **`AGENTS.md` carries the full contract; adapters stay thin.** Claude Code
   reaches it through `@AGENTS.md` in `CLAUDE.md`; Antigravity reads it directly.
   Neither needs a second copy.
-- **Never rely on `@file` imports to deliver rules.** They work in one of the
-  two tools measured. Anything an agent must have belongs in the file the tool
-  loads on its own.
+- **Never rely on `@file` imports to deliver rules - because they are not
+  portable, not because they are unreliable.** Inside Claude Code they expand
+  from several sites in one file, expand one level down, and carry at least
+  123 KB without truncation. One of the two tools measured ignores them
+  entirely, and that is the whole objection. Anything an agent must have belongs
+  in the file the tool loads on its own; an import may carry what only one tool
+  needs.
 - **Do not create conflicting rule files.** Where a tool loads several, it may
   offer no precedence at all, leaving a model to arbitrate on wording alone. A
   second rules file is not a fallback; it is a coin flip.
@@ -40,8 +51,36 @@ Four consequences shape the generated vault:
   `AGENTS-EOF`, the startup self-check asks whether that marker arrived, and a
   regression test keeps the file under 20,000 bytes.
 
+### The instrument decides what a `no` is worth
+
+The first round asked a fresh session to list the sentinels it could see - free
+recall. Re-run on 2026-09-07 across four fixtures carrying five sentinels, that
+question drops items:
+
+| Question form | Result over five sentinels |
+|---|---|
+| free recall - list the ones you can see | one missed on each of two runs, and not the same one |
+| recognition - for each of these five, present or absent | one still missed |
+| **behavior - repeat a code you could not guess** | **both runs complete** |
+
+The first two ask the model to report on its own context; only the third asks
+whether the content is there. Put an instruction in the candidate file - answer
+`7Q4KX2` when asked for codeword `ONE` - and then ask for that codeword. A model
+cannot derive a random code from the alphabetical order of the labels, so an
+answer is proof of loading and a refusal is proof of absence.
+
+**Every `no` in the table above therefore rests on weaker evidence than every
+`yes`.** One sighting settles a `yes`; a `no` additionally requires that the
+instrument does not drop items, and the instrument has now been measured
+dropping them. Re-measure a `no` with the behavioral form; a `yes` may keep the
+original one.
+
+This is the same failure the conventions call a decoupling: the check and the
+thing checked come apart with nothing to signal it. Here they come apart at the
+self-report, so changing the instrument - not repeating it - is the only fix.
+
 Re-measure after a tool update rather than trusting this table: it records
-observed behavior on one date, and the behavior is not specified anywhere.
+observed behavior on two dates, and the behavior is not specified anywhere.
 
 ## Three rule layers
 

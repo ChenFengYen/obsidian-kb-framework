@@ -89,6 +89,8 @@ has always had. `lifecycle` is that table's own vocabulary, `active` or
 | `KB-VERIFY-003` | Verification tools must not truncate by default | 驗證工具預設必須不省略 | reserved | — | — |
 | `KB-VERIFY-004` | Prove an off-site copy exists, do not infer it from configuration | 離機副本要實測不看設定 | reserved | — | — |
 | `KB-VERIFY-005` | A monitor's baseline must expire | 監測基準必須會過期 | reserved | — | — |
+| `KB-VERIFY-006` | Generated documents require a render read-back | 生成類產物必須渲染回讀 | reserved | — | — |
+| `KB-VERIFY-007` | Verify every review-list item against the source | 審閱清單須逐項回查原文 | reserved | — | — |
 | `KB-VISUAL-001` | Sequential palette runs high red to low blue | 連續色盤使用高紅低藍 | reserved | — | — |
 | `KB-VISUAL-002` | matplotlib CJK font rendering | matplotlib中文字型渲染 | reserved | — | — |
 | `KB-VISUAL-003` | ASCII diagram alignment | ASCII示意圖對齊規約 | reserved | — | — |
