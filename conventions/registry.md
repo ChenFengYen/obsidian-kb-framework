@@ -57,9 +57,9 @@ has always had. `lifecycle` is that table's own vocabulary, `active` or
 | `KB-ASSET-001` | Image asset naming | 圖片命名規約 | reserved | — | — |
 | `KB-AUTOMATION-001` | Segment LLM workflows under subscription limits | 訂閱模式LLM工作流分段 | reserved | — | — |
 | `KB-CHANGE-001` | [[Approval before destructive or published changes]] | 變更提交前核准 | shipped | core | — |
-| `KB-CHANGE-002` | Enumerate every match before a batch replacement | 批次替換前先枚舉命中 | reserved | — | — |
+| `KB-CHANGE-002` | [[Enumerate every match before a batch replacement]] | 批次替換前先枚舉命中 | shipped | core | — |
 | `KB-COLLAB-001` | [[Feasibility before implementation]] | 可行性問題與實作請求分流 | shipped | core | — |
-| `KB-COLLAB-002` | Present the argument outline before writing | 動筆前先給論證大綱 | reserved | — | — |
+| `KB-COLLAB-002` | [[Present the argument outline before writing]] | 動筆前先給論證大綱 | shipped | core | — |
 | `KB-DATA-001` | [[Use structured parsers for structured data]] | CSV必須使用標準解析器 | shipped | core | — |
 | `KB-DATA-002` | [[Version the analysis population]] | — | shipped | core | — |
 | `KB-DATA-003` | [[Separate source and derived data]] | — | shipped | core | — |

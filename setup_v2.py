@@ -166,6 +166,38 @@ def render_agents(cfg):
         '- Before destructive or breaking changes, commit, tag, or push: report scope, deletions, risks, tests, and the proposed message; obtain approval.',
         '- Treat user corrections as feedback candidates; change a Convention only when the reusable rule changes.',
         '',
+        '## Before the first write',
+        '',
+        'Run these before the first change to the vault in a session - not only',
+        'note edits, but also deleting files, overwriting a whole file, and batch',
+        'link rewrites. Those three usually go through a shell rather than an edit',
+        'tool, which makes them the easiest way around the steps. State the result',
+        'of each step; a step run silently leaves nothing to check afterwards.',
+        '',
+        '1. **Find the rules for this task.** Read the Convention index, or narrow',
+        '   it by trigger, and read the rules it turns up in full.',
+        '2. **Hand over the argument outline and wait.** Which files change, each',
+        '   section\'s core claim in one sentence, and which link carries which step',
+        '   of the argument. An editing tool\'s confirmation dialog does not count.',
+        '   Mechanical fixes are exempt. See `KB-COLLAB-002`.',
+        '3. **Check for duplicates.** Search similar filenames and existing',
+        '   `aliases`, so an existing note is not rewritten under a new name.',
+        '4. **Check after writing, and report the numbers.** Run',
+        '   `python tools/vault_health.py --broken-links` and compare with the count',
+        '   before the change; scan for links into agent memory, which must be 0.',
+    ]
+    if 'windows-zh-tw' in packs:
+        lines.extend([
+            '   Scan changed files for mojibake (U+E000-U+F8FF, U+FFFD), which must',
+            '   be 0.',
+        ])
+    lines.extend([
+        '   If the broken-link count rose, stop and find out why before going on.',
+        '',
+        'Deleting or renaming moves the check earlier: list every link that points',
+        'at the target and rewrite each one in context first, then delete. A dead',
+        'link found afterwards is already in version control.',
+        '',
         '## Knowledge workflow',
         '',
         '- Prefer question-driven growth: search -> synthesize -> identify gaps -> propose note changes.',
@@ -199,7 +231,7 @@ def render_agents(cfg):
         '',
         '## Task routing',
         '',
-    ]
+    ])
     lines.extend(routes)
     lines.extend([
         '',

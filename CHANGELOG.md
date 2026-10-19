@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.7.0 - 2026-10-19
+
+### Added
+
+- **core 新增兩則規約**，由上游 vault 2026-09-02 的規約移植。兩則晚於 09-01 的移植盤點一天建立，第一梯因此沒有排到；這裡不是重新評估後才收進來。
+  - **`KB-CHANGE-002` Enumerate every match before a batch replacement**（severity error）。替換的目標是一組列得完的已知字串，不是一個模式；長內容先寫成檔案再讓程式讀，不經 shell 傳遞。兩點不拆開，因為它們是同一次批次改寫裡的兩個靜默失效點。這則補上 `KB-CHANGE-001` 的空缺：該則要求批次變更前取得核准，這則說明核准的依據是命中清單。`OV-DETR` 案例與影響面數字原樣保留（上游 vault 移除九個資料夾前綴那次），只把「中文 replacement literal」改成泛指非 ASCII 字串。
+  - **`KB-COLLAB-002` Present the argument outline before writing**（severity warning）。這則接在 `KB-COLLAB-001` 之後：後者決定要不要展開計畫，這則規定展開之後、動筆之前先交出論證大綱，而且編輯工具的確認框不算確認。大綱第 4 要素原本寫 wikilink，改成泛指連結。〈相關〉刪掉指向 `KB-WRITING-002` 的那條，因為它在 repo 仍是 reserved，比照 `KB-VERIFY-001` 的前例。
+- **產生的 `AGENTS.md` 新增〈Before the first write〉**，由上游 vault〈動筆前必跑〉去在地化而來，共四步：讀本次任務的規約 → 交論證大綱並等待 → 查重複 → 寫入後跑 `vault_health.py --broken-links`、做 memory 連結掃描，並回報數字。涵蓋範圍明寫包含刪除、整檔覆寫、批次改連結，因為這三種通常走 shell，最容易繞過前面幾步。刪除或改名時，檢查要提前到動手之前。亂碼掃描只在啟用 `windows-zh-tw` pack 時才列出。**規約和這個區塊一起搬，原因是上游的經驗**：「先給大綱」單獨寫成規約時，是最常被漏掉的一條，掛到每次寫入都會經過的步驟上之後，漏跑才會留下痕跡。這個區塊的內容不依賴 core pack 是否安裝，規約編號只當延伸閱讀。
+
+### Changed
+
+- **`test_generated_vault_has_no_domain_prefix` 改成錨定完整字串。** 原本斷言整個產生的 vault 不含 `OV-` 子字串，而新規約的 `OV-DETR` 案例會讓它失敗——這個測試本身就是對前綴做通用比對，正是 `KB-CHANGE-002` 描述的那種錯誤。現在改查 `OV-` 加上每個網域資料夾名的完整字串；檔名前綴的檢查不變。
+
+### Tests
+
+- 40 則（39 → 40）：契約含〈Before the first write〉且指名 `KB-COLLAB-002`、所引用的 `tools/vault_health.py` 確實會被安裝、兩則規約都會進入產生的 vault、亂碼掃描只在 Windows pack 下出現。
+
 ## 2.6.0 - 2026-10-19
 
 ### Added

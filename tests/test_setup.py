@@ -135,6 +135,31 @@ class SetupTests(unittest.TestCase):
                 if adapter.is_file():
                     self.assertNotIn(marker, adapter.read_text(encoding='utf-8'), name)
 
+    def test_contract_carries_the_pre_write_steps(self):
+        '''The outline rule only bites if a step every write passes through
+        names it. Upstream, the rule alone was the one most often missed.'''
+        cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / 'vault'
+            setup_v2.create_vault(cfg, target)
+            agents = (target / 'AGENTS.md').read_text(encoding='utf-8')
+            block = agents.split('## Before the first write')[1].split('\n## ')[0]
+            self.assertIn('KB-COLLAB-002', block)
+            self.assertIn('tools/vault_health.py --broken-links', block)
+            self.assertTrue((target / 'tools' / 'vault_health.py').is_file())
+            for path in ('Present the argument outline before writing.md',
+                         'Enumerate every match before a batch replacement.md'):
+                self.assertTrue(
+                    list((target / 'KnowledgeBase' / 'Convention').rglob(path)), path
+                )
+            # The mojibake scan belongs to the Windows pack, not every vault.
+            self.assertNotIn('mojibake', block)
+            cfg['conventions'] = {'packs': ['core', 'obsidian', 'windows-zh-tw']}
+            other = Path(tmp) / 'zh'
+            setup_v2.create_vault(cfg, other)
+            zh = (other / 'AGENTS.md').read_text(encoding='utf-8')
+            self.assertIn('mojibake', zh.split('## Before the first write')[1].split('\n## ')[0])
+
     def test_agents_contract_carries_debrief_and_skills(self):
         cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
         with tempfile.TemporaryDirectory() as tmp:
@@ -595,7 +620,12 @@ class VaultLayoutTests(unittest.TestCase):
             setup_v2.create_vault(cfg, target)
             prefixed = [p.name for p in target.rglob('*') if p.name.startswith('OV-')]
             self.assertEqual(prefixed, [])
-            self.assertNotIn('OV-', all_text(target))
+            # Anchored to the prefixed folder names, not the bare prefix: the
+            # batch-replacement rule cites `OV-DETR`, a model name that must
+            # survive, as its example of what a bare-prefix check gets wrong.
+            text = all_text(target)
+            for name in cfg['domains']:
+                self.assertNotIn('OV-' + name, text)
             for name in cfg['domains']:
                 self.assertTrue((target / name / 'Map').is_dir(), name)
 
