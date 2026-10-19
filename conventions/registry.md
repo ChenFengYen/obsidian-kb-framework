@@ -57,7 +57,9 @@ has always had. `lifecycle` is that table's own vocabulary, `active` or
 | `KB-ASSET-001` | Image asset naming | 圖片命名規約 | reserved | — | — |
 | `KB-AUTOMATION-001` | Segment LLM workflows under subscription limits | 訂閱模式LLM工作流分段 | reserved | — | — |
 | `KB-CHANGE-001` | [[Approval before destructive or published changes]] | 變更提交前核准 | shipped | core | — |
+| `KB-CHANGE-002` | Enumerate every match before a batch replacement | 批次替換前先枚舉命中 | reserved | — | — |
 | `KB-COLLAB-001` | [[Feasibility before implementation]] | 可行性問題與實作請求分流 | shipped | core | — |
+| `KB-COLLAB-002` | Present the argument outline before writing | 動筆前先給論證大綱 | reserved | — | — |
 | `KB-DATA-001` | [[Use structured parsers for structured data]] | CSV必須使用標準解析器 | shipped | core | — |
 | `KB-DATA-002` | [[Version the analysis population]] | — | shipped | core | — |
 | `KB-DATA-003` | [[Separate source and derived data]] | — | shipped | core | — |
@@ -68,8 +70,8 @@ has always had. `lifecycle` is that table's own vocabulary, `active` or
 | `KB-EVIDENCE-004` | [[AI generated fields require verification]] | LLM生成內容的來源標註與引用界線 | shipped | core | `KB-AI-001` |
 | `KB-EVIDENCE-005` | [[Match claim strength to evidence]] | — | shipped | research | `KB-RESEARCH-001` |
 | `KB-EXPERIMENT-001` | [[Record experiment specifications]] | 乾實驗環境規格 | shipped | research | — |
-| `KB-FRONTMATTER-001` | [[Frontmatter remains structured]] | Frontmatter清單格式 | shipped | obsidian | — |
-| `KB-FRONTMATTER-002` | Frontmatter field semantics | Frontmatter欄位語意 | reserved | — | — |
+| `KB-FRONTMATTER-001` | [[Frontmatter remains structured]] | Frontmatter規約 | shipped | obsidian | — |
+| `KB-FRONTMATTER-002` | Frontmatter field semantics | merged into KB-FRONTMATTER-001 | reserved | — | — |
 | `KB-HISTORY-001` | [[Preserve note and convention history]] | 筆記與規約歷程保留 | shipped | core | — |
 | `KB-LANG-001` | Traditional Chinese wording in notes | 繁體中文筆記用詞 | reserved | — | — |
 | `KB-LANG-002` | Space around inline markers in CJK text | 中文粗體前後加半形空格 | reserved | — | — |
@@ -80,9 +82,9 @@ has always had. `lifecycle` is that table's own vocabulary, `active` or
 | `KB-PAPER-001` | PDF and YAML missing value handling | PDF與YAML缺值規約 | reserved | — | — |
 | `KB-PAPER-002` | Supplementary material gets its own note | 論文補充材料獨立建檔 | reserved | — | — |
 | `KB-PRECISION-001` | [[Make sources traceable]] | 學術引用與術語精確性 | shipped | research | `KB-RESEARCH-002` |
-| `KB-STRUCT-001` | Vault directory and note type structure | Vault目錄與筆記型別規約 | reserved | — | — |
+| `KB-STRUCT-001` | Vault directory, note type and naming structure | Vault目錄與筆記型別規約 | reserved | — | `KB-TITLE-001` |
 | `KB-TABLE-001` | Markdown tables and multi-image layout | Markdown表格與多圖排版 | reserved | — | — |
-| `KB-TITLE-001` | Concept note titles | 概念筆記標題規約 | reserved | — | — |
+| `KB-TITLE-001` | Concept note titles | merged into KB-STRUCT-001 | reserved | — | — |
 | `KB-VCS-001` | [[Ignore rules must survive directory renames]] | 忽略規則與目錄改名 | shipped | core | — |
 | `KB-VERIFY-001` | [[Confirm the measurement method before trusting numbers]] | 驗證數字前先確認量測方法 | shipped | core | — |
 | `KB-VERIFY-002` | [[Counterbalance presentation order in paired comparison]] | 成對比較須抵銷呈現順序 | shipped | core | — |
@@ -94,10 +96,13 @@ has always had. `lifecycle` is that table's own vocabulary, `active` or
 | `KB-VISUAL-001` | Sequential palette runs high red to low blue | 連續色盤使用高紅低藍 | reserved | — | — |
 | `KB-VISUAL-002` | matplotlib CJK font rendering | matplotlib中文字型渲染 | reserved | — | — |
 | `KB-VISUAL-003` | ASCII diagram alignment | ASCII示意圖對齊規約 | reserved | — | — |
+| `KB-VISUAL-004` | Fix the figure and its caption, do not add text around it | 圖與圖說精簡 | reserved | — | — |
 | `KB-VOCAB-001` | Classification vocabularies must be closed | 分類詞彙必須封閉 | reserved | — | — |
 | `KB-WRITING-001` | [[Notes teach, they do not log edits]] | 筆記不寫修改過程 | shipped | core | — |
 | `KB-WRITING-002` | Choose a narrative mode before enriching a note | 豐富筆記先選敘事模式 | reserved | — | — |
 | `KB-WRITING-003` | Callouts need an entry point in the body | callout須有正文入口 | reserved | — | — |
+| `KB-WRITING-004` | Plain objective prose and self-contained terminology | 筆記客觀平實與術語自明性 | reserved | — | — |
+| `KB-WRITING-005` | Technical note explanation framework and note type boundaries | 技術筆記解說與型別邊界 | reserved | — | — |
 
 ## Trigger vocabulary
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''Validate Convention frontmatter and rule identifiers.
 
-Four independent checks run over a Convention tree:
+Five independent checks run over a Convention tree:
 
 1. Frontmatter shape - every note carries the required fields with valid values.
 2. Registry agreement - every rule_id is listed in the registry, and every id
@@ -15,6 +15,11 @@ Four independent checks run over a Convention tree:
    several rules share a term; a value invented for one note can never be
    filtered for. Specific wording that no term covers belongs under `keywords`,
    an open field that is deliberately not a filter.
+5. Reference agreement - every rule id a note's body cites is one the registry
+   lists. Check 2 covers the id a note claims in its frontmatter; nothing else
+   read the ids notes use to point at each other, so a citation of an id that
+   never existed passed every check. Citing a `former_ids` entry is a warning,
+   not an error: the reader still lands on the right rule, by one extra hop.
 
 The registry is a Markdown table, not YAML. Its payload is a flat row of
 scalars, so YAML's nesting and load-time type checking were never used, while a
@@ -46,6 +51,9 @@ VALID_STATUS = {'shipped', 'reserved'}
 # domain rule never faces.
 VALID_LIFECYCLE = {'active', 'retired'}
 RULE_ID = re.compile(r'^[A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-\d{3}$')
+# The same shape found inside prose. Only ids under a namespace the registry
+# defines are judged, so `UTF-8` or a product code cannot be mistaken for one.
+RULE_REFERENCE = re.compile(r'(?<![A-Za-z0-9-])([A-Z][A-Z0-9]*-[A-Z][A-Z0-9]*-\d{3})(?![A-Za-z0-9])')
 HEADLINE = re.compile(r'^#+[ \t]*(?:一句話版|In one line)[ \t]*\n+((?:[ \t]*>.*\n?)+)', re.M)
 # Longest real headline measured across the upstream vault's 51 rules is 162
 # characters; this leaves room without letting a paragraph pass as a headline.
@@ -353,6 +361,65 @@ def check_registry(seen, registry_path, strict=False):
     return errors
 
 
+def body_references(text):
+    '''Yield (line_no, rule_id) for every id cited outside the frontmatter.
+
+    The frontmatter's own `rule_id` is check 2's business; counting it here
+    would only report the same problem twice.
+    '''
+    lines = text.splitlines()
+    start = 0
+    if lines and lines[0].strip() == '---':
+        for index in range(1, len(lines)):
+            if lines[index].strip() == '---':
+                start = index + 1
+                break
+    for index in range(start, len(lines)):
+        for match in RULE_REFERENCE.finditer(lines[index]):
+            yield index + 1, match.group(1)
+
+
+def check_references(references, registry_path, warnings):
+    '''Every id a note's body cites must be one the registry lists.
+
+    Namespaces come from the registry: the prefix of every listed rule, plus
+    every reserved prefix. A prefix that is only reserved stays unchecked, as
+    in check_registry, because its ids are enumerated somewhere this run
+    cannot see. A former id is resolved and reported as a warning.
+    '''
+    rules, prefixes, domain, _, errors = parse_registry(registry_path)
+    if errors or not rules:
+        return []
+    namespaces = {rule_id.split('-', 1)[0] + '-' for rule_id in rules} | set(prefixes)
+    enumerated = {p for p in prefixes if any(d.startswith(p) for d in domain)}
+    former = {
+        old: current
+        for current, entry in rules.items()
+        for old in entry['former_ids']
+    }
+
+    problems = []
+    for path, line_no, rule_id in references:
+        if rule_id in rules or rule_id in domain:
+            continue
+        if not any(rule_id.startswith(n) for n in namespaces):
+            continue
+        if rule_id in former:
+            warnings.append(
+                f'{path}:{line_no}: cites {rule_id}, a former id of '
+                f'{former[rule_id]}; cite {former[rule_id]} instead'
+            )
+            continue
+        matched = [p for p in prefixes if rule_id.startswith(p)]
+        if matched and not any(p in enumerated for p in matched):
+            continue
+        problems.append(
+            f'{path}:{line_no}: cites {rule_id}, which is not in '
+            f'{registry_path}; correct the id or register it'
+        )
+    return problems
+
+
 def headline(text):
     '''Return the one-line version of a Convention, or None.
 
@@ -453,10 +520,18 @@ def rules_for_trigger(root, term):
     return found
 
 
-def validate(root, registry=None, strict=False):
+def validate(root, registry=None, strict=False, warnings=None):
+    '''Return the errors in a Convention tree.
+
+    Pass a list as `warnings` to collect findings that do not fail the run;
+    without one they are dropped, so existing callers see only errors.
+    '''
+    if warnings is None:
+        warnings = []
     errors = []
     seen = {}
     triggers_by_path = {}
+    references = []
     found_registries = []
     files = [
         path for path in sorted(Path(root).rglob('*.md'))
@@ -497,6 +572,8 @@ def validate(root, registry=None, strict=False):
                 errors.append(f'{path}: {field} must be a list')
         if isinstance(data.get('triggers'), list):
             triggers_by_path[path] = data['triggers']
+        text = path.read_text(encoding='utf-8-sig')
+        references.extend((path, line_no, rid) for line_no, rid in body_references(text))
 
     if registry:
         registry_path = Path(registry)
@@ -514,6 +591,7 @@ def validate(root, registry=None, strict=False):
         errors.extend(check_registry(seen, registry_path, strict))
         _, _, _, vocabulary, _ = parse_registry(registry_path)
         errors.extend(check_triggers(triggers_by_path, vocabulary, registry_path))
+        errors.extend(check_references(references, registry_path, warnings))
     return errors
 
 
@@ -567,7 +645,10 @@ def main():
             print(f'{rule_id}\t{path}')
         return
 
-    errors = validate(args.root, args.registry, args.strict_registry)
+    warnings = []
+    errors = validate(args.root, args.registry, args.strict_registry, warnings)
+    for warning in warnings:
+        print('warning: ' + warning)
     if errors:
         print('\n'.join(errors))
         raise SystemExit(1)

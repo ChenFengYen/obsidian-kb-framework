@@ -47,9 +47,12 @@ Four consequences shape the generated vault:
   offer no precedence at all, leaving a model to arbitrate on wording alone. A
   second rules file is not a fallback; it is a coin flip.
 - **A rules file can be truncated silently.** Past the cap the tail is dropped
-  and nothing else looks wrong. The generated `AGENTS.md` therefore ends with
-  `AGENTS-EOF`, the startup self-check asks whether that marker arrived, and a
-  regression test keeps the file under 20,000 bytes.
+  and nothing else looks wrong. The generated `AGENTS.md` therefore names the
+  first reply's opening marker only in its last instruction, just above
+  `AGENTS-EOF`, and a regression test keeps the file under 20,000 bytes. Asking
+  the agent whether it saw the end is a self-report, which the next section
+  shows can miss; printing a marker it could only have learned from the end is
+  the behavioral form of the same question.
 
 ### The instrument decides what a `no` is worth
 

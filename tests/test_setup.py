@@ -111,6 +111,30 @@ class SetupTests(unittest.TestCase):
             size = len((target / 'AGENTS.md').read_bytes())
             self.assertLess(size, 20000, 'AGENTS.md is approaching the 24,000-byte load cap')
 
+    def test_opening_marker_is_named_only_at_the_end(self):
+        '''The marker proves the tail arrived only if nothing above it names it.
+
+        A self-check that asks "did you see AGENTS-EOF?" is answered by the
+        model about its own context, and that kind of answer was measured to
+        miss. Printing a marker is behavior instead - but only while the marker
+        appears in the final instruction and nowhere earlier, in the contract or
+        in an adapter that loads beside it.
+        '''
+        cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / 'vault'
+            setup_v2.create_vault(cfg, target)
+            agents = (target / 'AGENTS.md').read_text(encoding='utf-8')
+            marker = setup_v2.START_MARKER
+            self.assertEqual(agents.count(marker), 1)
+            tail = [line for line in agents.splitlines() if line.strip()][-2:]
+            self.assertIn(marker, tail[0])
+            self.assertEqual(tail[1], 'AGENTS-EOF')
+            for name in setup_v2.ADAPTER_FILES.values():
+                adapter = target / name
+                if adapter.is_file():
+                    self.assertNotIn(marker, adapter.read_text(encoding='utf-8'), name)
+
     def test_agents_contract_carries_debrief_and_skills(self):
         cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
         with tempfile.TemporaryDirectory() as tmp:
@@ -166,6 +190,64 @@ class SetupTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
+
+
+def citing(root, sentence):
+    '''Append a sentence to one core Convention's body, and return the tree.'''
+    victim = root / 'conventions' / 'core' / 'Do not invent facts or thresholds.md'
+    victim.write_text(
+        victim.read_text(encoding='utf-8') + '\n' + sentence + '\n',
+        encoding='utf-8',
+    )
+    return root / 'conventions'
+
+
+class ReferenceTests(unittest.TestCase):
+    '''Ids cited in a note's body, as opposed to the one it claims.'''
+
+    def run_with(self, sentence, domain=False):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copytree(ROOT / 'conventions', root / 'conventions')
+            if domain:
+                registry = root / 'conventions' / 'registry.md'
+                registry.write_text(
+                    with_domain_table(registry.read_text(encoding='utf-8')),
+                    encoding='utf-8',
+                )
+            warnings = []
+            errors = validate(citing(root, sentence), warnings=warnings)
+            return [str(e) for e in errors], warnings
+
+    def test_unregistered_citation_is_rejected_with_its_line(self):
+        # The upstream vault had exactly this: a rule citing KB-CLAIM-001 for
+        # a note whose id is KB-PRECISION-001. No check read body ids.
+        errors, _ = self.run_with('See `KB-CLAIM-001` for citation rules.')
+        hits = [e for e in errors if 'KB-CLAIM-001' in e]
+        self.assertEqual(len(hits), 1, errors)
+        self.assertRegex(hits[0], r'\.md:\d+: cites KB-CLAIM-001')
+
+    def test_registered_citation_passes(self):
+        errors, warnings = self.run_with('See KB-PRECISION-001 and KB-VISUAL-004.')
+        self.assertEqual(errors, [])
+        self.assertEqual(warnings, [])
+
+    def test_former_id_is_a_warning_naming_the_current_one(self):
+        errors, warnings = self.run_with('Formerly filed as KB-AI-001.')
+        self.assertEqual(errors, [])
+        self.assertEqual(len(warnings), 1, warnings)
+        self.assertIn('cite KB-EVIDENCE-004', warnings[0])
+
+    def test_only_registry_namespaces_are_judged(self):
+        errors, warnings = self.run_with('Encoded as UTF-8, per ISO-IEC-001.')
+        self.assertEqual(errors, [])
+        self.assertEqual(warnings, [])
+
+    def test_reserved_prefix_is_silent_until_enumerated(self):
+        errors, _ = self.run_with('Compare PHENO-XXX-999.')
+        self.assertEqual(errors, [])
+        errors, _ = self.run_with('Compare PHENO-XXX-999.', domain=True)
+        self.assertTrue([e for e in errors if 'PHENO-XXX-999' in e], errors)
 
 
 class RegistryTests(unittest.TestCase):

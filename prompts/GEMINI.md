@@ -12,4 +12,4 @@
 
 若你不使用 Gemini CLI，可在 `vault_config.yaml` 的 `agent.adapters` 移除 `gemini`，讓根目錄只留 `AGENTS.md` 一份規則檔。
 
-啟動時：確認 `AGENTS.md` 已進入 context（Gemini CLI 可用 `/memory show`），並確認看得到它最後一行的 `AGENTS-EOF`。看不到就是被截斷了——Antigravity 實測的載入上限是 **24,000 bytes**，超過的部分靜默截尾。未確認規則完整載入前，只進行唯讀探索，不修改 vault。
+啟動時：第一次回覆的開頭記號由 `AGENTS.md` 檔尾的指令決定，本檔刻意不寫出來——印不出記號就代表沒讀到檔尾，也就是被截斷了。Antigravity 實測的載入上限是 **24,000 bytes**，超過的部分靜默截尾。Gemini CLI 可用 `/memory show` 確認 `AGENTS.md` 已進入 context。未確認規則完整載入前，只進行唯讀探索，不修改 vault。

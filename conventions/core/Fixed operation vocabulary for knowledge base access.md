@@ -19,7 +19,7 @@ status: active
 
 ## In one line
 
-> Every action on the knowledge base maps to exactly one tool, and the set of operations is closed at five. The dividing line in one sentence: **computing a number *about* the content with a shell command is fine; reading the content *itself* with one is not.**
+> Every action on the knowledge base maps to exactly one tool, and the set of operations is closed at five. The dividing line in one sentence: **computing a number *about* the content with a shell command is fine; reading the content *itself* with one is not** - unless the platform has no dedicated read tool, and then a shell read counts as FETCH only once the whole file has arrived.
 
 Scope is the knowledge layer - notes and any agent memory store. Scratch files and script working directories are outside it.
 
@@ -29,7 +29,7 @@ Scope is the knowledge layer - notes and any agent memory store. Scratch files a
 |---|---|---|
 | CREATE | the write tool | SEARCH first, to confirm it does not already exist |
 | SEARCH | the content- and filename-search tools | none |
-| FETCH | the read tool, whole file, no line limit | none |
+| FETCH | the read tool, whole file, no line limit; a platform without one, see below | none |
 | UPDATE | the edit tool | the same file has been FETCHed in this session |
 | DELETE | mark superseded and remove from indexes | a hard delete needs human approval |
 
@@ -41,7 +41,7 @@ The vocabulary is closed for the same reason a classification vocabulary is: an 
 
 ## Why FETCH is the read tool and not a shell command
 
-Reading the same file three ways does not deliver the same thing:
+Reading the same file three ways does not deliver the same thing. The table was measured on one platform; staleness notices, edit preconditions, and output caps depend on how a platform configures its tools, so read it as an example of how deliveries differ, not as a property of every agent:
 
 | Difference | Read tool | `cat` / `head` / `sed -n` |
 |---|---|---|
@@ -53,9 +53,18 @@ The first difference has the least visible consequence: content read through a s
 
 The third is an instance of the "tools omit by default" family - the tool announces the truncation, but a downstream record saying only "read that file" will record a 2 KB preview as a whole file.
 
+### When the platform has no dedicated read tool
+
+Some agents are given only a command runner. The wrong conclusion there is the common one: finding no tool shaped like a read tool, the agent reports that memory could not be loaded. The shell is then the read tool, under the same rule:
+
+- Read text with the encoding stated explicitly, such as UTF-8.
+- It is still FETCH. A search hit, an excerpt, or a truncated preview is not a read. If the output is cut, read the missing range in file order until the whole file has arrived, and with several files confirm each one.
+- Do not claim what the shell did not give you. There is no staleness notice and no edit precondition; when currency matters, compare the file's modification time with the dates recorded inside it.
+- The exception covers text only. It does not license OCR or parsing of images, PDFs, audio, or video through the shell, and it widens no write, delete, or sandbox permission. Whether a non-text format can be read at all depends on the tools in the current session; the presence of a shell does not imply it.
+
 ## The line between content and numbers
 
-What is forbidden is reading **content** through a shell, not touching the knowledge base with one:
+Apart from the exception above, a platform that has a dedicated read tool does not read content through a shell. What is forbidden is reading **content** that way, not touching the knowledge base with one:
 
 > If the output enters your reasoning as material, it must be FETCHed.
 > If the output is only a statistic about the content, a shell command is the right tool.

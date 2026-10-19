@@ -13,6 +13,9 @@ sys.path.insert(0, str(ROOT))
 from framework.validate_conventions import parse_registry  # noqa: E402
 CORE_SKILLS = ('init-domain', 'review-vault', 'suggest-next', 'debrief')
 VALID_PACKS = {'core', 'obsidian', 'research', 'windows-zh-tw'}
+# Named once, in the last instruction of the generated AGENTS.md. Naming it
+# anywhere above that line would let a truncated contract print it anyway.
+START_MARKER = '§'
 CORE_SCRIPTS = (
     'config.py', 'vault_health.py', 'note_graph.py', 'audit_images.py',
     'rename_images.py', 'validate_conventions.py',
@@ -202,29 +205,29 @@ def render_agents(cfg):
         '',
         '## Startup self-check',
         '',
-        'Before the first reply, confirm briefly what actually loaded:',
+        'The first reply does two things, and prints no status list:',
         '',
-        '```text',
-        'Agent: <name / model, if known>',
-        'cwd: <working directory>',
-        'Loaded: AGENTS / conventions / memory (or memory unavailable)',
-        'Whole file: AGENTS-EOF seen? / truncation notice in context?',
-        'Capabilities: read / write / shell / network',
-        'Mode: read-only investigation | proposal-first change',
-        '```',
+        '1. **Opening marker.** The marker is named by an instruction at the end of',
+        '   this file, not here. It is proof that the end arrived, not a report about',
+        '   it: an agent that never received the tail does not know what to print.',
+        '   Other files that must arrive whole, such as a memory index, may end with',
+        '   a marker instruction of their own; print each where it says.',
+        '2. **Deviations only.** If a startup step did not happen - memory could not',
+        '   be read, a guide was skipped - say so in one sentence on the first line.',
         '',
-        'Report load state, limits, and the goal for this session. Do not restate the rules.',
+        'Do not report agent, cwd, capabilities, or mode. The mode is set by the',
+        'minimum safety contract: investigate before editing.',
         '',
-        'The last line of this file is `AGENTS-EOF`. Some agents cap how much of a',
-        'rules file they load and simply stop reading at the limit, so a contract',
-        'can arrive with its ending missing and nothing else looking wrong. If you',
-        'cannot see that marker, say so - you are working from a partial contract.',
+        'The marker sits at the end because truncation is silent. Some agents cap how',
+        'much of a rules file they load and stop reading at the limit, so a contract',
+        'can arrive with its ending missing and nothing else looking wrong. A first',
+        'reply without the marker means the contract arrived incomplete.',
     ])
     lines.extend(['', '## Configured profile', ''])
     lines.extend(profile_lines(cfg))
     lines.extend(['', '## Enabled convention packs', ''])
     lines.extend('- `' + pack + '`' for pack in packs)
-    lines.extend(['', 'AGENTS-EOF', ''])
+    lines.extend(['', 'Begin your first reply with `' + START_MARKER + '`.', '', 'AGENTS-EOF', ''])
     return '\n'.join(lines)
 
 
