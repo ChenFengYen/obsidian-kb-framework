@@ -217,27 +217,51 @@ class SetupTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_zotero_key_is_found_where_setup_puts_it_and_never_committed(self):
+    def test_zotero_module_points_to_the_standalone_tools(self):
         cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
         cfg['modules']['zotero'] = True
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / 'zotero'
             setup_v2.create_vault(cfg, target)
-            tools = target / 'zotero-tools'
-            self.assertTrue((tools / '.env.example').is_file())
+            self.assertFalse((target / 'zotero-tools').exists())
+            self.assertTrue((target / 'Papers' / 'PDF-raw').is_dir())
+            agents = (target / 'AGENTS.md').read_text(encoding='utf-8')
+            self.assertIn(setup_v2.ZOTERO_TOOLS_REPO, agents)
+            self.assertIn('ZOTERO_AGENT_DIR', agents)
+
+    def test_zotero_key_is_looked_up_only_through_the_variable(self):
+        cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / 'vault'
+            setup_v2.create_vault(cfg, target)
+            probe = 'import vault_health; print(vault_health.zotero_env_path())'
             env = {k: v for k, v in os.environ.items() if k != 'ZOTERO_AGENT_DIR'}
-            result = subprocess.run(
-                [sys.executable, '-c', 'import vault_health; print(vault_health.zotero_env_path())'],
-                cwd=target / 'tools', env=env, capture_output=True, text=True, check=False,
-            )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(Path(result.stdout.strip()), tools / '.env')
-            if shutil.which('git') is None:
-                self.skipTest('git not available')
-            (tools / '.env').write_text('ZOTERO_API_KEY=secret\n', encoding='utf-8')
+            unset = subprocess.run([sys.executable, '-c', probe], cwd=target / 'tools',
+                                   env=env, capture_output=True, text=True, check=False)
+            self.assertEqual(unset.returncode, 0, unset.stderr)
+            self.assertEqual(unset.stdout.strip(), 'None')
+            agent_dir = Path(tmp) / 'zotero-with-ai-agent'
+            env['ZOTERO_AGENT_DIR'] = str(agent_dir)
+            set_ = subprocess.run([sys.executable, '-c', probe], cwd=target / 'tools',
+                                  env=env, capture_output=True, text=True, check=False)
+            self.assertEqual(set_.returncode, 0, set_.stderr)
+            self.assertEqual(Path(set_.stdout.strip()), agent_dir / '.env')
+
+    def test_generated_gitignore_keeps_any_env_file_out(self):
+        if shutil.which('git') is None:
+            self.skipTest('git not available')
+        cfg = yaml.safe_load((ROOT / 'vault_config.yaml.example').read_text(encoding='utf-8'))
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / 'vault'
+            setup_v2.create_vault(cfg, target)
+            nested = target / 'zotero-with-ai-agent'
+            nested.mkdir()
+            for path in (target / '.env', nested / '.env'):
+                path.write_text('ZOTERO_API_KEY=secret\n', encoding='utf-8')
             subprocess.run(['git', 'init', '-q'], cwd=target, check=True)
-            ignored = subprocess.run(['git', 'check-ignore', '-q', 'zotero-tools/.env'], cwd=target)
-            self.assertEqual(ignored.returncode, 0, 'zotero-tools/.env would be committed')
+            for rel in ('.env', 'zotero-with-ai-agent/.env'):
+                ignored = subprocess.run(['git', 'check-ignore', '-q', rel], cwd=target)
+                self.assertEqual(ignored.returncode, 0, rel + ' would be committed')
 
 
 def citing(root, sentence):

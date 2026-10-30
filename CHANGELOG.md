@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.8.0 - 2026-10-30
+
+### Removed
+
+- **`zotero-tools/`**（三支腳本與 2.7.1 加的 `.env.example`）。Zotero 工具改在獨立的公開 repo [zotero-with-ai-agent](https://github.com/ChenFengYen/zotero-with-ai-agent) 維護。這裡原本那份是早期快照，上游之後的修正都沒跟上：Windows 終端的 UTF-8 輸出、`update item` 欄位值的 JSON 解析、`--pdf` 必須指定 `--pdf-dir`、`USER_AGENT` 改成實際的 repo 網址。而且 `suggest_tags.py` 會讀同目錄的 `tag_config.json`，這份卻沒有附上，所以裝進 vault 後一跑就失敗。兩邊各留一份只會繼續分岔，所以留獨立 repo 那份。
+- **`examples/configs/plant-phenotyping.tag_config.json`**。內容與 zotero-with-ai-agent 的 `tag_config.json` 完全相同，repo 內沒有任何地方引用它。
+
+### Changed
+
+- **啟用 `zotero` 模組時不再複製腳本。** 模組只做 vault 這一側的事：建立 `Papers/`（ZotFile 歸檔 PDF 用），並在產生的 `AGENTS.md` 加一行路由，寫明工具位在 `$ZOTERO_AGENT_DIR`、是哪個 repo 的 clone。`setup_v2.py` 結束時會印出 clone 網址與要設的變數。`.gitignore` 照舊排除 `.env`，萬一有人把工具 clone 進 vault，還有這一層防護。
+- **`vault_health.py` 的 `zotero_env_path()` 只認 `ZOTERO_AGENT_DIR`。** 不再後備到 `<vault>/zotero-tools/.env`，因為那個資料夾已經不會產生。沒設變數時回傳 `None`，`--zotero` 會印一行提示，改從環境變數讀 key，key 已在環境變數裡就照常檢查。
+- **`vault_health.py` 報告裡建議的指令改成 `python "$ZOTERO_AGENT_DIR/import_papers.py" …`、`python "$ZOTERO_AGENT_DIR/suggest_tags.py" …`。** 原本寫 `python import_papers.py`，不管在 vault 根目錄還是 `tools/` 下執行都找不到這支腳本。
+- `requirements.txt` 的 pyzotero／python-dotenv 註解改標為 `vault_health.py --zotero` 的選用依賴；README（中、英）目錄樹拿掉 `zotero-tools/`，並各加一段指向 zotero-with-ai-agent；`docs/SETUP.md`〈Modules〉改寫成 clone → `.env` → 設變數三步。
+
+### 遷移
+
+2.8.0 之前產生的 vault 裡有 `zotero-tools/`。換成獨立 repo 的步驟：
+
+1. 把 zotero-with-ai-agent clone 到 vault 以外的地方。
+2. 把 `zotero-tools/.env` 移到 clone 的根目錄。
+3. 把環境變數 `ZOTERO_AGENT_DIR` 設成 clone 的路徑。
+4. 刪除 vault 裡的 `zotero-tools/`。
+
+產生的 `AGENTS.md` 裡那行 Zotero 路由仍是舊的寫法，要換成新寫法，用 `setup_v2.py` 另外產生一份 vault，再把那一行抄過去。
+
+### Tests
+
+- 43 則（41 → 43）：2.7.1 那則拆成三則。①啟用 `zotero` 時不產生 `zotero-tools/`，`Papers/PDF-raw` 仍會建立，`AGENTS.md` 寫出 repo 網址與 `ZOTERO_AGENT_DIR`。②`zotero_env_path()` 有設變數時回傳 `<變數>/.env`，沒設時回傳 `None`。③在 vault 根目錄與子資料夾各放一個 `.env`，用 `git check-ignore` 確認兩者都被排除。①②在 2.7.1 的程式碼上會失敗；③在 2.7.1 本來就會通過，所以改拿 2.7.0 的 `setup_v2.py` 來跑，確認會失敗。
+
 ## 2.7.1 - 2026-10-30
 
 ### Fixed

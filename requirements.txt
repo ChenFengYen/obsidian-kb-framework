@@ -5,6 +5,6 @@ pyyaml>=6.0
 # pymupdf>=1.23
 # pillow>=10.0
 
-# Optional: zotero-tools module
+# Optional: vault_health.py --zotero
 # pyzotero>=1.5
 # python-dotenv>=1.0

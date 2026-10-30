@@ -44,6 +44,8 @@ No tool-specific permissions are installed. Configure permissions locally accord
 
 Enable modules in `vault_config.yaml` before generation. Zotero and paper processing create `Papers`; v2 does not install automatic link, stub, or batch-enrichment scripts.
 
-The Zotero module installs `zotero-tools/`. Copy `zotero-tools/.env.example` to `zotero-tools/.env` and fill in the API key; the generated `.gitignore` excludes `.env`. If the tools live outside the vault, point `ZOTERO_AGENT_DIR` at that folder so `vault_health.py --zotero` finds the key.
+The Zotero tools are maintained in their own repository, [zotero-with-ai-agent](https://github.com/ChenFengYen/zotero-with-ai-agent); the Zotero module installs no scripts. It creates `Papers/`, where ZotFile can file PDFs, and adds a routing line to `AGENTS.md`. Clone the tools outside the vault, put the API key in `.env` at the root of that clone, and set the environment variable `ZOTERO_AGENT_DIR` to the clone's path. The vault's agents and `vault_health.py --zotero` both find the tools and the key through that variable. The generated `.gitignore` excludes `.env` anywhere in the vault, as a second guard in case the tools are cloned inside it.
+
+Vaults generated before 2.8.0 have a `zotero-tools/` folder. Move its `.env` into the new clone, set `ZOTERO_AGENT_DIR`, then delete the folder.
 
 Existing vaults should adopt v2 manually: add `AGENTS.md`, select Conventions, and validate behavior before changing established paths.

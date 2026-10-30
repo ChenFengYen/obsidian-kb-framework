@@ -16,6 +16,9 @@ VALID_PACKS = {'core', 'obsidian', 'research', 'windows-zh-tw'}
 # Named once, in the last instruction of the generated AGENTS.md. Naming it
 # anywhere above that line would let a truncated contract print it anyway.
 START_MARKER = '§'
+# The Zotero tools are maintained in their own repository; the module only
+# prepares the vault side and tells the agent where the tools live.
+ZOTERO_TOOLS_REPO = 'https://github.com/ChenFengYen/zotero-with-ai-agent'
 CORE_SCRIPTS = (
     'config.py', 'vault_health.py', 'note_graph.py', 'audit_images.py',
     'rename_images.py', 'validate_conventions.py',
@@ -109,7 +112,11 @@ def render_agents(cfg):
     if modules['paper_pipeline']:
         routes.append('- Paper processing: read `Papers/PAPER_PROCESSING_GUIDE.md` first.')
     if modules['zotero']:
-        routes.append('- Zotero work: inspect command help before changing the library.')
+        routes.append(
+            '- Zotero work: the tools live outside the vault in `$ZOTERO_AGENT_DIR` '
+            '(a clone of ' + ZOTERO_TOOLS_REPO + '); inspect their command help '
+            'before changing the library.'
+        )
     lines = [
         '# Knowledge Base Agent Entry',
         '',
@@ -459,12 +466,14 @@ def create_vault(raw_config, target_dir):
         copy_files(ROOT / 'paper-pipeline', scripts, paper_scripts)
         guide = ROOT / 'docs' / 'PAPER_PROCESSING_GUIDE.md'
         shutil.copy2(guide, target / 'Papers' / guide.name)
-    if modules['zotero']:
-        shutil.copytree(ROOT / 'zotero-tools', target / 'zotero-tools', dirs_exist_ok=True)
-    # .env holds the Zotero API key; a synced vault must never commit it.
+    # .env holds the Zotero API key; a synced vault must never commit it, even
+    # when the tools are cloned into the vault instead of beside it.
     ignore = '__pycache__/\n*.pyc\n.obsidian/workspace*.json\n.env\n'
     (target / '.gitignore').write_text(ignore, encoding='utf-8')
     print('Created portable vault at: ' + str(target))
+    if modules['zotero']:
+        print('Zotero tools: clone ' + ZOTERO_TOOLS_REPO + ' outside the vault, '
+              'put its .env there, and set ZOTERO_AGENT_DIR to that folder.')
 
 
 def interactive_config():

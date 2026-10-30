@@ -501,10 +501,10 @@ def check_concept_paper_backlinks():
 
 
 def zotero_env_path():
-    """Where the Zotero API key lives: ZOTERO_AGENT_DIR when the tools sit
-    outside the vault, otherwise the folder setup_v2.py installs them into."""
-    agent_dir = os.environ.get("ZOTERO_AGENT_DIR") or os.path.join(VAULT_ROOT, "zotero-tools")
-    return os.path.join(agent_dir, ".env")
+    """The .env of the Zotero tools, which live in their own repository and are
+    found only through ZOTERO_AGENT_DIR. None when the variable is unset."""
+    agent_dir = os.environ.get("ZOTERO_AGENT_DIR")
+    return os.path.join(agent_dir, ".env") if agent_dir else None
 
 
 def check_zotero():
@@ -513,7 +513,11 @@ def check_zotero():
         from dotenv import load_dotenv
         from pyzotero import zotero
 
-        load_dotenv(zotero_env_path())
+        env_path = zotero_env_path()
+        if env_path:
+            load_dotenv(env_path)
+        else:
+            print("  Note: ZOTERO_AGENT_DIR not set; reading the key from the environment only")
 
         api_key = os.getenv("ZOTERO_API_KEY")
         lib_id = os.getenv("ZOTERO_LIBRARY_ID")
@@ -764,11 +768,11 @@ def generate_report(checks, zotero_result=None):
         if zr["missing_dois_written"]:
             lines.append(
                 f"\n> DOI 清單已輸出至 `vault_health_missing.txt`（{zr['missing_dois_written']} 篇）\n"
-                f"> 建議：`python import_papers.py --file vault_health_missing.txt --pdf --dry-run`"
+                f"> 建議：`python \"$ZOTERO_AGENT_DIR/import_papers.py\" --file vault_health_missing.txt --pdf --dry-run`"
             )
         if zr["untagged_count"]:
             lines.append(
-                f"\n> 建議：`python suggest_tags.py --untagged --dry-run`"
+                f"\n> 建議：`python \"$ZOTERO_AGENT_DIR/suggest_tags.py\" --untagged --dry-run`"
             )
         lines.append("")
 
@@ -791,7 +795,7 @@ def generate_report(checks, zotero_result=None):
     if zotero_result and zotero_result["unmatched_count"] > 0:
         actions.append(
             f"補齊 ~{zotero_result['unmatched_count']} 篇 Zotero 落差論文 "
-            f"→ `python import_papers.py --file vault_health_missing.txt --pdf --dry-run`"
+            f"→ `python \"$ZOTERO_AGENT_DIR/import_papers.py\" --file vault_health_missing.txt --pdf --dry-run`"
         )
 
     if "orphans" in checks:

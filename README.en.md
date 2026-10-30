@@ -25,7 +25,7 @@ obsidian-kb-framework/                     the template; not anyone's vault
 |   +-- core/ obsidian/                    default packs
 |   +-- research/ windows-zh-tw/           optional packs
 +-- framework/                             validate_conventions vault_health note_graph
-+-- paper-pipeline/ zotero-tools/          optional modules, off by default
++-- paper-pipeline/                        optional module, off by default
 +-- templates/ examples/ docs/ tests/
         |
         |   python setup.py                vault_config.yaml decides what is installed
@@ -102,6 +102,8 @@ conventions:
 ## Optional Modules
 
 `zotero` and `paper_pipeline` are optional. The v1 automatic link, stub, and batch-enrichment tools are not installed by v2.
+
+The Zotero tools live in their own repository, [zotero-with-ai-agent](https://github.com/ChenFengYen/zotero-with-ai-agent): querying and tidying the library, importing papers by DOI, and suggesting tags from OpenAlex. Clone it outside the vault and point the environment variable `ZOTERO_AGENT_DIR` at it. With the `zotero` module on, the vault's agents and `vault_health.py --zotero` find the tools and the API key through that variable. See [Setup](docs/SETUP.md).
 
 ## Validation
 

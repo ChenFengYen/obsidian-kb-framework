@@ -66,6 +66,8 @@ python setup.py
 
 論文圖表與 Zotero 工具屬可選模組，不會自動建立概念連結。
 
+Zotero 工具在獨立的 repo 維護：[zotero-with-ai-agent](https://github.com/ChenFengYen/zotero-with-ai-agent)，提供查詢與整理文獻庫、以 DOI 匯入文獻、依 OpenAlex 建議 tag 等功能。把它 clone 到 vault 以外的地方，再用環境變數 `ZOTERO_AGENT_DIR` 指向它；啟用 `zotero` 模組後，vault 的 agent 和 `vault_health.py --zotero` 都透過這個變數找到工具與 API key。設定步驟見 [SETUP.md](docs/SETUP.md)。
+
 ## 框架與產物
 
 repo 是模板來源，本身不是知識庫。`setup.py` 讀 `vault_config.yaml` 生成一個可獨立版本控管的 vault，兩邊的檔案有對應關係但職責不同。
@@ -83,7 +85,7 @@ obsidian-kb-framework/                     模板來源，本身不是任何人�
 |   +-- core/ obsidian/                    預設 pack
 |   +-- research/ windows-zh-tw/           選用 pack
 +-- framework/                             validate_conventions vault_health note_graph
-+-- paper-pipeline/ zotero-tools/          選用模組，預設不裝
++-- paper-pipeline/                        選用模組，預設不裝
 +-- templates/ examples/ docs/ tests/
         |
         |   python setup.py                依 vault_config.yaml 決定裝哪些
