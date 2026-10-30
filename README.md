@@ -120,4 +120,4 @@ your-vault/                                產物，可獨立成一個 git repo
 
 ## 授權
 
-MIT License
+MIT License，全文見 [LICENSE](LICENSE)。

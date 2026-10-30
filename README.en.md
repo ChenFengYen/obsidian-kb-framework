@@ -121,4 +121,4 @@ The tests generate clean General and Neuroscience vaults, validate Convention me
 
 ## License
 
-MIT
+MIT; see [LICENSE](LICENSE).
