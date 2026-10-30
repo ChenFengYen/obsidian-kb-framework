@@ -500,14 +500,20 @@ def check_concept_paper_backlinks():
 # ---------------------------------------------------------------------------
 
 
+def zotero_env_path():
+    """Where the Zotero API key lives: ZOTERO_AGENT_DIR when the tools sit
+    outside the vault, otherwise the folder setup_v2.py installs them into."""
+    agent_dir = os.environ.get("ZOTERO_AGENT_DIR") or os.path.join(VAULT_ROOT, "zotero-tools")
+    return os.path.join(agent_dir, ".env")
+
+
 def check_zotero():
     """Cross-check Zotero library vs vault. Returns dict or None on error."""
     try:
         from dotenv import load_dotenv
         from pyzotero import zotero
 
-        env_path = os.path.join(VAULT_ROOT, "zotero-ai-agent", ".env")
-        load_dotenv(env_path)
+        load_dotenv(zotero_env_path())
 
         api_key = os.getenv("ZOTERO_API_KEY")
         lib_id = os.getenv("ZOTERO_LIBRARY_ID")

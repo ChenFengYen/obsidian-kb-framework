@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.7.1 - 2026-10-30
+
+### Fixed
+
+- **產生的 `.gitignore` 排除 `.env`。** Zotero 模組的三支腳本用 `load_dotenv()` 讀 API key，自然的放法是 `zotero-tools/.env`；原本的 `.gitignore` 只排除快取與 workspace，vault 一旦用 obsidian-git 之類的工具同步，key 就會被提交並推送出去。`.env` 不分模組一律排除，因為沒有任何情況需要提交它。
+- **`vault_health.py --zotero` 找得到 key。** 原本寫死 `<vault>/zotero-ai-agent/.env`，那是上游 vault 的資料夾名，而 `setup_v2.py` 把工具裝在 `zotero-tools/`，所以產生的 vault 永遠讀不到 key（除非 key 剛好在環境變數裡），檢查只會印「not set」後跳過。現在先看 `ZOTERO_AGENT_DIR`（工具放在 vault 外時用），未設才用 `<vault>/zotero-tools/.env`；路徑抽成 `zotero_env_path()` 以便測試。上游 vault 2026-10-21 把工具搬出 vault 時就是改用這個變數。
+
+### Added
+
+- **`zotero-tools/.env.example`**：列出腳本需要的鍵。原本產生的 vault 沒有任何地方說明 key 放哪、叫什麼。`docs/SETUP.md`〈Modules〉補一段放法。
+
+### Tests
+
+- 41 則（40 → 41）：啟用 Zotero 產生 vault 後，`zotero_env_path()` 指向 `zotero-tools/.env`，且 `git check-ignore` 確認該檔被排除。兩項斷言都先對舊程式碼跑過，各自失敗。
+
 ## 2.7.0 - 2026-10-19
 
 ### Added

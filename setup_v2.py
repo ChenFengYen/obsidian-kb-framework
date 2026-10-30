@@ -461,7 +461,8 @@ def create_vault(raw_config, target_dir):
         shutil.copy2(guide, target / 'Papers' / guide.name)
     if modules['zotero']:
         shutil.copytree(ROOT / 'zotero-tools', target / 'zotero-tools', dirs_exist_ok=True)
-    ignore = '__pycache__/\n*.pyc\n.obsidian/workspace*.json\n'
+    # .env holds the Zotero API key; a synced vault must never commit it.
+    ignore = '__pycache__/\n*.pyc\n.obsidian/workspace*.json\n.env\n'
     (target / '.gitignore').write_text(ignore, encoding='utf-8')
     print('Created portable vault at: ' + str(target))
 

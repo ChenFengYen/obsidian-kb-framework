@@ -44,4 +44,6 @@ No tool-specific permissions are installed. Configure permissions locally accord
 
 Enable modules in `vault_config.yaml` before generation. Zotero and paper processing create `Papers`; v2 does not install automatic link, stub, or batch-enrichment scripts.
 
+The Zotero module installs `zotero-tools/`. Copy `zotero-tools/.env.example` to `zotero-tools/.env` and fill in the API key; the generated `.gitignore` excludes `.env`. If the tools live outside the vault, point `ZOTERO_AGENT_DIR` at that folder so `vault_health.py --zotero` finds the key.
+
 Existing vaults should adopt v2 manually: add `AGENTS.md`, select Conventions, and validate behavior before changing established paths.
