@@ -42,6 +42,16 @@ assert scan(known_bad),        "misses a known defect -> the tool is broken"
 assert not scan(known_good),   "flags clean content -> the pattern is too wide"
 ```
 
+#### A new test must fail when the change is removed
+
+The same defence applies to a test you have just written: a new test that would also have passed before your change is not testing the change. Here the "case known to match" is not a bad input but the code with your change switched off - disable the new logic, run once, confirm that the specific test turns red, then restore and confirm everything is green again.
+
+**Why the previous defence will not remind you.** A broken scanner reports clean, and a result of zero invites suspicion. A test is not broken: it does assert something, only that something was already true before the change. The green result is credited to the new logic when it comes from existing behaviour - an attribution error, not a tool failure - so the instinct that a broken tool reports clean never fires.
+
+A measured example: after five tests were added for a new validation rule, the new logic was forced empty and the suite rerun; the targeted test turned red, and after restoring, the whole suite passed. Without that step, whether those five would have passed before the change is inference, not evidence.
+
+**Not every test needs this.** Ask which change this test guards. If you can name it, run the negative control once. Tests that guard no particular change - regression baselines, smoke tests, characterisation tests that pin current behaviour - exist to pass now, and are exempt.
+
 ### 2. The total is moving, so only a difference attributes anything
 
 Whole-repository statistics are unreliable as before-and-after evidence whenever anything else can write to the repository between the two runs - a background auto-commit, a second machine, a collaborator.

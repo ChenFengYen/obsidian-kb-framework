@@ -110,6 +110,8 @@ Practice bears this out: checks compiled into scripts - link counts, encoding sc
 
 Platform-specific interfaces for the BLOCK layer belong in your platform guide, not here.
 
+**A hook is not BLOCK merely because it is a hook.** Only its decision - allow or deny - blocks anything. A hook that only injects text into the agent's context is still INSTRUCT: it controls when the reminder arrives, not whether the agent complies. Check when that text arrives on your platform; on at least one, it reaches the agent only after the tool has already run.
+
 ## Judgement question
 
 **If I used the wrong operation just now, where would I see it?**

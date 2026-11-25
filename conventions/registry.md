@@ -60,9 +60,10 @@ has always had. `lifecycle` is that table's own vocabulary, `active` or
 | `KB-CHANGE-002` | [[Enumerate every match before a batch replacement]] | 批次替換前先枚舉命中 | shipped | core | — |
 | `KB-COLLAB-001` | [[Feasibility before implementation]] | 可行性問題與實作請求分流 | shipped | core | — |
 | `KB-COLLAB-002` | [[Present the argument outline before writing]] | 動筆前先給論證大綱 | shipped | core | — |
+| `KB-COMPUTE-001` | Estimate actual read volume before analysing large files | 大型資料分析先估讀取量 | reserved | — | — |
 | `KB-DATA-001` | [[Use structured parsers for structured data]] | CSV必須使用標準解析器 | shipped | core | — |
-| `KB-DATA-002` | [[Version the analysis population]] | — | shipped | core | — |
-| `KB-DATA-003` | [[Separate source and derived data]] | — | shipped | core | — |
+| `KB-DATA-002` | [[Version the analysis population]] | 分析母體須先定版 | shipped | core | — |
+| `KB-DATA-003` | [[Separate source and derived data]] | 分析輸入須明確列舉 | shipped | core | — |
 | `KB-ENCODING-001` | [[Windows UTF-8 file safety]] | Windows UTF8輸出與中文檔案安全 | shipped | windows-zh-tw | — |
 | `KB-EVIDENCE-001` | [[Do not invent facts or thresholds]] | 不捏造數值門檻 | shipped | core | — |
 | `KB-EVIDENCE-002` | Literature search completeness | 文獻搜尋完整性 | reserved | — | — |
@@ -83,6 +84,7 @@ has always had. `lifecycle` is that table's own vocabulary, `active` or
 | `KB-PAPER-002` | Supplementary material gets its own note | 論文補充材料獨立建檔 | reserved | — | — |
 | `KB-PRECISION-001` | [[Make sources traceable]] | 學術引用與術語精確性 | shipped | research | `KB-RESEARCH-002` |
 | `KB-STRUCT-001` | Vault directory, note type and naming structure | Vault目錄與筆記型別規約 | reserved | — | `KB-TITLE-001` |
+| `KB-STRUCT-002` | MOCs record relations, not tables of contents | MOC寫關係不寫目錄 | reserved | — | — |
 | `KB-TABLE-001` | Markdown tables and multi-image layout | Markdown表格與多圖排版 | reserved | — | — |
 | `KB-TITLE-001` | Concept note titles | merged into KB-STRUCT-001 | reserved | — | — |
 | `KB-VCS-001` | [[Ignore rules must survive directory renames]] | 忽略規則與目錄改名 | shipped | core | — |
@@ -100,7 +102,7 @@ has always had. `lifecycle` is that table's own vocabulary, `active` or
 | `KB-VOCAB-001` | Classification vocabularies must be closed | 分類詞彙必須封閉 | reserved | — | — |
 | `KB-WRITING-001` | [[Notes teach, they do not log edits]] | 筆記不寫修改過程 | shipped | core | — |
 | `KB-WRITING-002` | Choose a narrative mode before enriching a note | 豐富筆記先選敘事模式 | reserved | — | — |
-| `KB-WRITING-003` | Callouts need an entry point in the body | callout須有正文入口 | reserved | — | — |
+| `KB-WRITING-003` | Callouts need an entry point in the body | 重點提示區塊須有正文入口 | reserved | — | — |
 | `KB-WRITING-004` | Plain objective prose and self-contained terminology | 筆記客觀平實與術語自明性 | reserved | — | — |
 | `KB-WRITING-005` | Technical note explanation framework and note type boundaries | 技術筆記解說與型別邊界 | reserved | — | — |
 

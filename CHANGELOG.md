@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.8.2 - 2026-11-25
+
+### Added
+
+- **`docs/AI_AGENT_GUIDE.md` 新增〈Per-action context from hooks〉**：規則檔在 session 開始時載入一次，hook 是第二條通道。實測 Claude Code 2.1.331（Windows）：`PreToolUse` 與 `PostToolUse` 回傳的 `additionalContext` 對 Write、Edit 都會送進 agent 的 context，但兩者都在工具執行之後才送達，所以只能影響下一步、攔不住當下這次寫入；要在寫入前擋下只能回 `permissionDecision: "deny"`。量法沿用同檔的行為式哨兵：hook 執行時產生隨機代號寫進 log，agent 先回報、後讀 log，另以對照檔驗證不注入的方向。
+- **`KB-VERIFY-001` 新增〈A new test must fail when the change is removed〉**：新寫的測試如果在改動前也會通過，就沒有在測那個改動；要把新邏輯關掉跑一次，確認指定的那一則轉紅。它和掃描器「壞了回報乾淨」不同：測試沒壞，是綠燈被錯誤歸因給新邏輯，所以原本那條直覺不會被觸發。迴歸基準、smoke test 等不守特定改動的測試不適用。上游 vault 2026-09-03 已有此節，本版補進框架。
+- **`KB-OUTPUT-001` 新增資料表的存放規則，語氣改為強制**：資料表不得存入 vault。agent 產生的中間表預設放平台暫存目錄，使用者決定保留才移到專案工作路徑；使用者整理或外部收集的表放 vault 外的工作路徑，agent 不得複製進 vault；筆記內只放節錄小表，附取樣口徑與完整表路徑。另規定筆記不得引用暫存目錄路徑，因為暫存目錄會被清空。唯一例外是使用者在當次請求中明確要求。
+- 登記表補兩列 reserved：`KB-COMPUTE-001`（大型資料分析先估讀取量）、`KB-STRUCT-002`（MOC寫關係不寫目錄），兩者已存在於上游 vault。
+
+### Changed
+
+- **`KB-ACCESS-001`〈Three layers〉補一段**：hook 不會因為是 hook 就屬於 BLOCK 層，只有它的 allow／deny 決定會擋下動作；只注入文字的 hook 仍是 INSTRUCT，差別只在提醒的送達時機。上游 vault 曾把 `additionalContext` 誤列為阻擋層介面，2026-11-25 經實測更正。
+- 登記表 `name_zh` 同步上游 vault：`KB-WRITING-003` 改為「重點提示區塊須有正文入口」；`KB-DATA-002`、`KB-DATA-003` 補上「分析母體須先定版」「分析輸入須明確列舉」（上游 vault 於 2026-11-05 建立兩則筆記）。
+
 ## 2.8.1 - 2026-11-25
 
 ### Added

@@ -85,6 +85,32 @@ self-report, so changing the instrument - not repeating it - is the only fix.
 Re-measure after a tool update rather than trusting this table: it records
 observed behavior on two dates, and the behavior is not specified anywhere.
 
+### Per-action context from hooks
+
+The files above load once, at session start. A hook is a second channel: text
+returned in `hookSpecificOutput.additionalContext` from a `PreToolUse` or
+`PostToolUse` hook is inserted into the agent's context around a single tool
+call. Measured on 2026-11-25 against Claude Code 2.1.331 on Windows, with a
+`Write|Edit` matcher and the behavioral form above: the hook generated a random
+code at run time and logged it, the agent reported the code it saw before
+reading the log, and the session transcript was a third source. A control file
+that ran the hook without meeting its filename condition checked the other
+direction.
+
+| | Write | Edit |
+|---|---|---|
+| `PreToolUse` text reaches the agent | yes | yes |
+| `PostToolUse` text reaches the agent | yes | yes |
+| control file - hook runs, returns nothing | nothing injected | nothing injected |
+
+**Both arrive after the tool has run.** The agent receives the `PreToolUse`
+text together with the tool result and the `PostToolUse` text, so to the agent
+the two are equivalent: either can shape the next step, and neither can stop
+the current write. A check that must hold before a write lands has to return
+`permissionDecision: "deny"` with its reason; a deny still takes effect under
+permissive permission modes, where an `ask` is approved automatically.
+Re-measure after a tool update, as with the table above.
+
 ## Three rule layers
 
 1. Agent contract: short requirements that must be loaded at startup.
