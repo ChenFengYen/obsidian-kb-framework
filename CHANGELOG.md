@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.8.1 - 2026-11-25
+
+### Added
+
+- **`docs/METHODOLOGY.md` 新增〈Progressive integration levels〉**：在原本的空間導航骨架（`Home -> MOCs -> Notes`）之外，補上領域中立的四層進階資訊整合分級——L1 概念與方法、L2 來源與實證、L3 組織與人物、L4 決策與應用——並附學術研究、軟體工程、個人學習與實務工作三欄落地對照表。核心立場寫在〈Separating data layer from thinking layer at L3〉：不是每一層都該用 wikilink 串接；L3 若將所有作者或組織機械轉成連結會製造大量紅連結與空殼筆記，且純字串易撞名或因更名分裂，因此拆成「L2 來源 frontmatter 的結構化資料層（對照單一實體名稱表與外部識別鍵）」與「只在反覆交會或實際交流時升格的 L3 思考層筆記（底部以動態查詢回撈來源）」。
+- **`docs/NOTE_TEMPLATES.md` 新增〈Organization or team note〉與〈Canonical entity lookup table〉**：提供領域中立的 L3 組織／團隊筆記骨架，以及配套的實體名稱對照表雙表設計（主對照表含主識別碼與舊／收斂識別碼；忽略名單過濾園區、資助方或重複上位機構等噪音）。這套設計源自上游 vault 以 OpenAlex／ROR 實測回填 13 篇文獻時抓到的邊界問題（舊新 ROR 並存、子實驗室展開、園區地名誤判為隸屬單位）。
+
+### Tests
+
+- 未更動程式碼與規約檔；既有的 43 則單元測試與 `--strict-registry` 均維持通過。
+
 ## 2.8.0 - 2026-10-30
 
 ### Removed
